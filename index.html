@@ -406,8 +406,30 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 .new-request-btn:hover { opacity: 0.9; }
 
 .requester-queue-view {
-  flex: 1; overflow-y: auto; padding: 20px 24px;
-  max-width: 800px; margin: 0 auto; width: 100%;
+  flex: 1; overflow: hidden; padding: 20px 24px;
+  width: 100%;
+  display: flex; flex-direction: column;
+}
+.kanban-board {
+  display: flex; gap: 16px; flex: 1; overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin; scrollbar-color: #ddd transparent;
+}
+.kanban-column {
+  min-width: 240px; flex: 1; display: flex; flex-direction: column;
+  max-width: 300px;
+}
+.kanban-column-header {
+  font-size: 12px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--text-tertiary); margin-bottom: 12px;
+  padding: 0 4px; display: flex; align-items: center; gap: 8px;
+}
+.kanban-column-header .col-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.kanban-column-cards {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+  scrollbar-width: thin; scrollbar-color: #ddd transparent;
 }
 
 /* New Request drawer */
@@ -1749,50 +1771,49 @@ function renderRequesterQueue() {
     return s;
   };
 
-  let html = `
-    <div class="pipeline-overview">
-      <div class="pipeline-stage"><i data-lucide="play-circle" class="icon stage-icon"></i><div class="stage-count">${counts['in-progress']}</div><div class="stage-label">In Progress</div></div>
-      <div class="pipeline-connector"></div>
-      <div class="pipeline-stage"><i data-lucide="eye" class="icon stage-icon"></i><div class="stage-count">${counts.review}</div><div class="stage-label">Review</div></div>
-      <div class="pipeline-connector"></div>
-      <div class="pipeline-stage"><i data-lucide="alert-circle" class="icon stage-icon"></i><div class="stage-count">${counts.blocked}</div><div class="stage-label">Blocked</div></div>
-      <div class="pipeline-connector"></div>
-      <div class="pipeline-stage"><i data-lucide="clock" class="icon stage-icon"></i><div class="stage-count">${counts.triaged + counts.queued}</div><div class="stage-label">Waiting</div></div>
-      <div class="pipeline-connector"></div>
-      <div class="pipeline-stage"><i data-lucide="check-circle" class="icon stage-icon"></i><div class="stage-count">${counts.complete}</div><div class="stage-label">Complete</div></div>
-    </div>
-  `;
+  const columns = [
+    { key: 'Waiting', color: 'var(--gold)', tasks: groups['Waiting'] },
+    { key: 'In Progress', color: 'var(--green)', tasks: groups['In Progress'] },
+    { key: 'In Review', color: 'var(--purple)', tasks: groups['In Review'] },
+    { key: 'Blocked', color: 'var(--red)', tasks: groups['Blocked'] },
+    { key: 'Completed', color: 'var(--text-tertiary)', tasks: groups['Completed'] }
+  ];
 
-  for (const [groupName, groupTasks] of Object.entries(groups)) {
-    if (groupTasks.length === 0) continue;
-    
+  let html = `<div class="kanban-board">`;
+
+  for (const col of columns) {
     html += `
-      <div class="queue-group">
-        <div class="queue-group-title">
-          ${groupName}
-          <span class="queue-count">${groupTasks.length}</span>
+      <div class="kanban-column">
+        <div class="kanban-column-header">
+          <div class="col-dot" style="background:${col.color}"></div>
+          ${col.key}
+          <span class="queue-count">${col.tasks.length}</span>
         </div>
-        ${groupTasks.map(task => `
-          <div class="queue-card" onclick="openTaskModalReadOnly('${task.id}')">
-            <div class="queue-card-header">
-              <div class="queue-card-title">${task.title}</div>
-              <div class="queue-card-status" style="color: ${statusColor(task.status)}">${statusLabel(task.status)}</div>
-            </div>
-            <div class="queue-card-meta">
-              <span class="queue-card-assignee">${task.assignee ? STATE.team[task.assignee]?.name || task.assignee : 'Unassigned'}</span>
-              <span>Requested by ${task.requester}</span>
-              <span>Due ${task.due}</span>
-            </div>
-            ${task.progress > 0 ? `
-              <div class="queue-card-progress">
-                <div class="queue-card-progress-bar" style="width: ${task.progress}%"></div>
+        <div class="kanban-column-cards">
+          ${col.tasks.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px;text-align:center">No tasks</div>` :
+            col.tasks.map(task => `
+              <div class="queue-card" onclick="openTaskModalReadOnly('${task.id}')">
+                <div class="queue-card-title">${task.title}</div>
+                <div class="queue-card-meta">
+                  <span class="queue-card-assignee">${task.assignee ? STATE.team[task.assignee]?.name || task.assignee : 'Unassigned'}</span>
+                  <span>Due ${task.due}</span>
+                </div>
+                <div class="queue-card-meta" style="margin-top:2px">
+                  <span>${task.requester}</span>
+                </div>
+                ${task.progress > 0 ? `
+                  <div class="queue-card-progress">
+                    <div class="queue-card-progress-bar" style="width:${task.progress}%"></div>
+                  </div>
+                ` : ''}
               </div>
-            ` : ''}
-          </div>
-        `).join('')}
+            `).join('')}
+        </div>
       </div>
     `;
   }
+
+  html += `</div>`;
 
   container.innerHTML = html;
   lucide.createIcons();
