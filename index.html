@@ -897,10 +897,11 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 .template-modal {
   position: fixed; inset: 0; z-index: 300;
   background: rgba(0,0,0,0.5);
-  display: flex; align-items: center; justify-content: center;
+  display: none; align-items: center; justify-content: center;
   opacity: 0; transition: opacity 0.2s;
+  pointer-events: none;
 }
-.template-modal.show { opacity: 1; }
+.template-modal.show { display: flex; opacity: 1; pointer-events: auto; }
 .template-modal iframe {
   width: 90vw; height: 85vh; border: none;
   border-radius: 16px; background: white;
