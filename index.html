@@ -176,7 +176,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
   border: 1px solid var(--border);
   transition: var(--transition); cursor: pointer; position: relative;
 }
-.task-card:hover { transform: translateY(-1px); }
+.task-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .task-card.priority-high,
 .task-card.priority-medium,
 .task-card.priority-low,
@@ -214,7 +214,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 .task-card .card-meta span { display: flex; align-items: center; gap: 4px; }
 .task-card .card-assignee { font-size: 12px; color: var(--text-secondary); font-weight: 400; margin-bottom: 4px; padding-left: 14px; }
 .task-card .card-progress {
-  margin-top: 8px; height: 2px; border-radius: 1px; background: var(--border); margin-left: 14px;
+  margin-top: 8px; height: 4px; border-radius: 2px; background: var(--border); margin-left: 14px;
 }
 .task-card .card-progress-bar {
   height: 100%; border-radius: 1px; background: var(--accent);
@@ -495,7 +495,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
   border-radius: 12px; padding: 16px; margin-bottom: 10px;
   cursor: pointer; transition: var(--transition);
 }
-.queue-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.queue-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .queue-card-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   margin-bottom: 8px;
@@ -511,7 +511,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 }
 .queue-card-assignee { font-weight: 500; }
 .queue-card-progress {
-  height: 2px; border-radius: 1px; background: var(--border); margin-top: 8px;
+  height: 4px; border-radius: 2px; background: var(--border); margin-top: 8px;
 }
 .queue-card-progress-bar {
   height: 100%; border-radius: 1px; background: var(--accent);
@@ -852,6 +852,11 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 .new-request-btn:active { transform: translateY(0) scale(0.98); }
 
 .hidden { display: none !important; }
+.empty-state { text-align: center; padding: 32px 24px; color: var(--text-secondary); }
+.empty-state-illustration { width: 48px; height: 48px; margin: 0 auto 16px; border-radius: 12px; background: var(--bg-warm); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 20px; }
+.empty-state h3 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.empty-state p { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
+.last-updated { font-size: 11px; color: var(--text-tertiary); margin-left: 12px; font-weight: 400; }
 
 /* ===== TOAST NOTIFICATIONS ===== */
 .toast-container {
@@ -933,13 +938,35 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
-  .chat-panel { width: 100%; min-width: 0; }
-  .board-panel { display: none; }
-  #managerView .mobile-board-toggle { display: flex; }
-  .primary-zone .task-title { font-size: 22px; }
+  #viewSelector { padding: 0 16px; height: 48px; }
+  #viewSelector .logo { font-size: 15px; }
+  .view-tabs { gap: 16px; }
+  .view-tab { font-size: 12px; }
+  .view { padding-top: 48px; }
+  #managerView { flex-direction: column; }
+  .chat-panel { width: 100%; min-width: 0; max-height: 50vh; margin: 12px; }
+  .board-panel { display: block; padding: 12px 16px; }
+  .designer-content { padding: 24px 20px; }
   .primary-zone { padding: 24px; }
-  .request-drawer { width: 100%; right: 0; }
-  .chat-widget { width: calc(100vw - 48px); right: 24px; }
+  .primary-zone .task-title { font-size: 22px; }
+  .request-drawer { width: 100%; }
+  .chat-widget { width: calc(100vw - 32px); right: 16px; bottom: 80px; }
+  .kanban-column { min-width: 200px; }
+  .requester-header-bar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .last-updated { display: none; }
+}
+@media (max-width: 480px) {
+  #viewSelector .logo { font-size: 14px; }
+  .view-tabs { gap: 12px; }
+  .view-tab { font-size: 11px; }
+  .chat-panel { margin: 8px; max-height: 45vh; }
+  .chat-header { padding: 16px 20px 12px; }
+  .chat-messages { padding: 12px 16px; }
+  .chat-input-area { padding: 12px 16px; }
+  .quick-actions { padding: 6px 16px; }
+  .board-panel { padding: 8px 12px; }
+  .primary-zone .task-title { font-size: 20px; }
+  .kanban-column { min-width: 180px; }
 }
 </style>
 </head>
@@ -947,7 +974,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 
 <!-- View Selector -->
 <div id="viewSelector">
-  <div class="logo">The <span>Atelier</span></div>
+  <div class="logo">The <span>Atelier</span></div><span class="last-updated" id="lastUpdated"></span>
   <div style="display: flex; align-items: center; gap: 24px;">
     <button id="themeToggle" onclick="toggleDarkMode()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; display: flex; align-items: center; transition: color 0.2s;">
       <i data-lucide="moon" id="themeIcon" class="icon"></i>
@@ -1158,6 +1185,7 @@ function loadState() {
   try { const s = localStorage.getItem('atelier_state'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
 }
 function saveState() {
+  updateTimestamp();
   try { localStorage.setItem('atelier_state', JSON.stringify(STATE)); } catch(e) {}
   // Re-render all views to keep everything in sync
   renderBoard();
@@ -1167,6 +1195,23 @@ function saveState() {
   clearTimeout(saveState._timer);
   saveState._timer = setTimeout(() => syncToSupabase(), 500);
 }
+
+// Update timestamp
+let _lastSaveTime = Date.now();
+function updateTimestamp() {
+  _lastSaveTime = Date.now();
+  const el = document.getElementById('lastUpdated');
+  if (el) el.textContent = 'Updated just now';
+}
+setInterval(() => {
+  const el = document.getElementById('lastUpdated');
+  if (!el || !_lastSaveTime) return;
+  const diff = Math.floor((Date.now() - _lastSaveTime) / 1000);
+  if (diff < 10) el.textContent = 'Updated just now';
+  else if (diff < 60) el.textContent = 'Updated ' + diff + 's ago';
+  else if (diff < 3600) el.textContent = 'Updated ' + Math.floor(diff/60) + 'm ago';
+  else el.textContent = 'Updated ' + Math.floor(diff/3600) + 'h ago';
+}, 10000);
 
 // Sync all tasks to Supabase
 async function syncToSupabase() {
@@ -1507,7 +1552,7 @@ function renderBoard() {
 }
 
 function renderCard(task, showAssignee) {
-  if(!task) return '';
+  if(!task) return '<div class="empty-state" style="padding:20px 16px"><p style="margin:0;font-size:12px">No primary assigned</p></div>';
   const statusClass = task.status === 'in-progress' ? 'status-in-progress' :
     task.status === 'review' ? 'status-review' :
     task.status === 'blocked' ? 'status-blocked' :
@@ -1597,9 +1642,10 @@ function renderDesigner() {
   
   if(!primary) {
     content.innerHTML = `
-      <div style="text-align:center;padding:40px;color:var(--text-dim);max-width:640px;width:100%">
-        <h2 class="heading" style="color:var(--text);margin-bottom:8px">No primary task</h2>
-        <p style="color:var(--text-secondary)">Check with Lucas for your next assignment.</p>
+      <div class="empty-state" style="max-width:640px;width:100%;padding:48px 24px">
+        <div class="empty-state-illustration">☀️</div>
+        <h3>Your slate is clean</h3>
+        <p>No primary task right now — enjoy the breathing room,<br>or check in with Lucas for what's next.</p>
       </div>
       ${ints.length > 0 ? `
         <div class="interruption-zone">
@@ -2416,7 +2462,7 @@ function renderRequesterQueue() {
           <span class="queue-count">${col.tasks.length}</span>
         </div>
         <div class="kanban-column-cards">
-          ${col.tasks.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px;text-align:center">No tasks</div>` :
+          ${col.tasks.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px;text-align:center">All clear ✨</div>` :
             col.tasks.map(task => {
               // Check for deliverable preview (only real URLs)
               const deliverable = task.status === 'complete' && task.attachments ? 
