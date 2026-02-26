@@ -2814,8 +2814,7 @@ function closeTemplateLibrary() {
   modal.classList.remove('show');
 }
 
-function openDesignSystem() {
-  closeTemplateLibrary();
+function openDesignSystemModal() {
   const modal = document.getElementById('designSystemModal');
   const iframe = document.getElementById('designSystemFrame');
   iframe.src = 'https://parthenon-design-system.vercel.app/';
