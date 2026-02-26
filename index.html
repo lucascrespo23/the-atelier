@@ -853,7 +853,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 
 .hidden { display: none !important; }
 .empty-state { text-align: center; padding: 32px 24px; color: var(--text-secondary); }
-.empty-state-illustration { width: 80px; height: 80px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+.empty-state-illustration { width: 160px; height: 160px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
 .empty-state-illustration img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
 .empty-state p { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
@@ -1517,8 +1517,7 @@ function renderBoard() {
   panel.innerHTML = `
     <div class="board-section">
       <div class="board-section-title"><i data-lucide="target" class="icon"></i> In Focus</div>
-      ${renderCard(danielPrimary, true)}
-      ${renderCard(benjPrimary, true)}
+      ${(!danielPrimary && !benjPrimary) ? '<div class="empty-state" style="padding:24px 16px"><div class="empty-state-illustration"><img src="img/empty-inbox.jpg" alt=""></div><p>No one\'s heads-down on a primary yet.<br>Assign a task from the queue to get things moving.</p></div>' : (renderCard(danielPrimary, true) + renderCard(benjPrimary, true))}
     </div>
     <div class="board-section">
       <div class="board-section-title"><i data-lucide="pin" class="icon"></i> This Week's Secondary</div>
@@ -1553,7 +1552,7 @@ function renderBoard() {
 }
 
 function renderCard(task, showAssignee) {
-  if(!task) return '<div class="empty-state" style="padding:20px 16px"><div class="empty-state-illustration" style="width:56px;height:56px;margin-bottom:8px"><img src="img/empty-inbox.jpg" alt=""></div><p style="margin:0;font-size:12px">No primary assigned</p></div>';
+  if(!task) return '';
   const statusClass = task.status === 'in-progress' ? 'status-in-progress' :
     task.status === 'review' ? 'status-review' :
     task.status === 'blocked' ? 'status-blocked' :
@@ -2463,7 +2462,7 @@ function renderRequesterQueue() {
           <span class="queue-count">${col.tasks.length}</span>
         </div>
         <div class="kanban-column-cards">
-          ${col.tasks.length === 0 ? `<div class="empty-state" style="padding:16px"><div class="empty-state-illustration" style="width:48px;height:48px;margin-bottom:6px"><img src="img/all-clear.jpg" alt=""></div><p style="margin:0;font-size:11px">All clear</p></div>` :
+          ${col.tasks.length === 0 ? `<div class="empty-state" style="padding:20px"><div class="empty-state-illustration" style="width:96px;height:96px;margin-bottom:8px"><img src="img/all-clear.jpg" alt=""></div><p style="margin:0;font-size:11px">All clear</p></div>` :
             col.tasks.map(task => {
               // Check for deliverable preview (only real URLs)
               const deliverable = task.status === 'complete' && task.attachments ? 
