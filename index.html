@@ -1295,7 +1295,9 @@ function showToast(message, color = 'var(--accent)') {
 }
 
 // ===== VIEW SWITCHING =====
+let currentView = 'manager';
 function switchView(view) {
+  currentView = view;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(view + 'View').classList.add('active');
@@ -2662,6 +2664,7 @@ function openTaskModalInternal(taskId, readOnly) {
           const isActive = task.status === s;
           return `<button class="status-btn ${isActive ? 'active-status' : ''}" onclick="modalSetStatus('${taskId}','${s}')">${label}</button>`;
         }).join('')}
+        ${currentView === 'manager' ? `<button class="status-btn" style="margin-left:auto;color:var(--red)" onclick="modalDeleteTask('${taskId}')">Delete</button>` : ''}
       </div>
     `}
   `;
@@ -2797,6 +2800,16 @@ function modalSetStatus(taskId, status) {
   
   showToast('Task moved to ' + statusLabel);
   saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
+}
+
+function modalDeleteTask(taskId) {
+  const task = STATE.tasks[taskId];
+  if (!task) return;
+  if (!confirm('Delete "' + task.title + '" permanently? This can\'t be undone.')) return;
+  delete STATE.tasks[taskId];
+  closeTaskModal();
+  showToast('Deleted: ' + task.title, 'var(--red)');
+  saveState(); renderBoard(); renderDesigner(); renderRequesterQueue();
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTaskModal(); });
