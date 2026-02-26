@@ -1580,7 +1580,42 @@ function renderDesigner() {
   const name = STATE.team[id].name;
   
   if(!primary) {
-    content.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text-dim)"><h2 class="heading" style="color:var(--text);margin-bottom:8px">No primary task</h2>Check with Lucas for your next assignment.</div>`;
+    content.innerHTML = `
+      <div style="text-align:center;padding:40px;color:var(--text-dim);max-width:640px;width:100%">
+        <h2 class="heading" style="color:var(--text);margin-bottom:8px">No primary task</h2>
+        <p style="color:var(--text-secondary)">Check with Lucas for your next assignment.</p>
+      </div>
+      ${ints.length > 0 ? `
+        <div class="interruption-zone">
+          <div class="zone-label">
+            <i data-lucide="pin" class="icon"></i> Interruptions
+            <span class="interruption-counter">${ints.length}/2 used</span>
+          </div>
+          <div class="slot-row">
+            ${ints[0] ? renderDesignerInt(ints[0], 1) : `<div class="slot-card">Slot 1 — Available</div>`}
+            ${ints[1] ? renderDesignerInt(ints[1], 2) : `<div class="slot-card">Slot 2 — Available</div>`}
+          </div>
+        </div>
+      ` : ''}
+      ${completed.length > 0 ? `
+        <div style="max-width:640px;width:100%;margin-top:16px">
+          <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="document.getElementById('completedSection-${id}').classList.toggle('hidden')">
+            <i data-lucide="check-circle" class="icon icon-sm"></i> Completed (${completed.length})
+            <span style="font-size:9px">▼</span>
+          </div>
+          <div id="completedSection-${id}" class="hidden">
+            ${completed.map(t => `
+              <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:8px;opacity:0.6;cursor:pointer" onclick="openTaskModal('${t.id}')">
+                <div style="font-size:13px;color:var(--text-tertiary);text-decoration:line-through">${t.title}</div>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">${t.requester} · ${t.due}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    `;
+    if(document.getElementById('designerMessages').children.length === 0) initDesignerChat();
+    lucide.createIcons();
     return;
   }
   
