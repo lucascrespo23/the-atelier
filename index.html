@@ -6,7 +6,6 @@
 <title>The Atelier — Design Team Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="config.js" onerror=""></script>
 <style>
 :root {
   --bg: #F9F8F2;
@@ -910,20 +909,12 @@ function switchView(view) {
 }
 
 // ===== CLAUDE API =====
-const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
-// To run locally, create config.js with: window.CLAUDE_KEY = 'your-key-here';
-const CLAUDE_KEY = window.CLAUDE_KEY || localStorage.getItem('atelier_claude_key') || prompt('Enter Claude API key:');
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
 async function callClaude(systemPrompt, messages, maxTokens = 256) {
-  const res = await fetch(CLAUDE_API, {
+  const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: {
-      'x-api-key': CLAUDE_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: maxTokens, system: systemPrompt, messages })
   });
   if (!res.ok) throw new Error('API error ' + res.status);
