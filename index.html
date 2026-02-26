@@ -1508,19 +1508,22 @@ function renderCard(task, showAssignee) {
     task.status === 'triaged' ? 'Triaged' : 
     task.status === 'complete' ? 'Complete' : 'Queued';
   
-  // Check for deliverable preview
+  // Check for deliverable preview (only for real URLs, not placeholder '#')
   const deliverable = task.status === 'complete' && task.attachments ? 
     task.attachments.find(a => a.isDeliverable) : null;
   let deliverablePreview = '';
-  if (deliverable) {
+  if (deliverable && deliverable.url && deliverable.url.startsWith('http')) {
     if (deliverable.url.includes('figma.com')) {
       const embedUrl = `https://www.figma.com/embed?embed_host=atelier&url=${encodeURIComponent(deliverable.url)}`;
       deliverablePreview = `<div class="deliverable-preview"><iframe src="${embedUrl}"></iframe></div>`;
-    } else if (deliverable.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    } else if (deliverable.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) || deliverable.url.match(/\.(jpg|jpeg|png|gif|webp)/i)) {
       deliverablePreview = `<div class="deliverable-preview"><img src="${deliverable.url}" alt="${deliverable.name}"></div>`;
     } else {
-      deliverablePreview = `<div class="deliverable-preview"><div class="link-preview"><i data-lucide="external-link" class="icon"></i>${deliverable.name}</div></div>`;
+      deliverablePreview = `<div class="deliverable-preview"><div class="link-preview"><a href="${deliverable.url}" target="_blank" style="color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:6px"><i data-lucide="external-link" class="icon"></i>${deliverable.name}</a></div></div>`;
     }
+  } else if (deliverable) {
+    // File upload without real URL — show file name only
+    deliverablePreview = `<div class="deliverable-preview"><div class="link-preview" style="justify-content:center"><i data-lucide="file-check" class="icon" style="color:var(--green)"></i><span style="color:var(--text-secondary)">${deliverable.name}</span></div></div>`;
   }
   
   return `
@@ -2347,19 +2350,21 @@ function renderRequesterQueue() {
         <div class="kanban-column-cards">
           ${col.tasks.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px;text-align:center">No tasks</div>` :
             col.tasks.map(task => {
-              // Check for deliverable preview
+              // Check for deliverable preview (only real URLs)
               const deliverable = task.status === 'complete' && task.attachments ? 
                 task.attachments.find(a => a.isDeliverable) : null;
               let deliverablePreview = '';
-              if (deliverable) {
+              if (deliverable && deliverable.url && deliverable.url.startsWith('http')) {
                 if (deliverable.url.includes('figma.com')) {
                   const embedUrl = `https://www.figma.com/embed?embed_host=atelier&url=${encodeURIComponent(deliverable.url)}`;
                   deliverablePreview = `<div class="deliverable-preview"><iframe src="${embedUrl}"></iframe></div>`;
-                } else if (deliverable.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                } else if (deliverable.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) || deliverable.url.match(/\.(jpg|jpeg|png|gif|webp)/i)) {
                   deliverablePreview = `<div class="deliverable-preview"><img src="${deliverable.url}" alt="${deliverable.name}"></div>`;
                 } else {
-                  deliverablePreview = `<div class="deliverable-preview"><div class="link-preview"><i data-lucide="external-link" class="icon"></i>${deliverable.name}</div></div>`;
+                  deliverablePreview = `<div class="deliverable-preview"><div class="link-preview"><a href="${deliverable.url}" target="_blank" style="color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:6px"><i data-lucide="external-link" class="icon"></i>${deliverable.name}</a></div></div>`;
                 }
+              } else if (deliverable) {
+                deliverablePreview = `<div class="deliverable-preview"><div class="link-preview" style="justify-content:center"><i data-lucide="file-check" class="icon" style="color:var(--green)"></i><span style="color:var(--text-secondary)">${deliverable.name}</span></div></div>`;
               }
               
               return `
