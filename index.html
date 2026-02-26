@@ -853,7 +853,8 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 
 .hidden { display: none !important; }
 .empty-state { text-align: center; padding: 32px 24px; color: var(--text-secondary); }
-.empty-state-illustration { width: 48px; height: 48px; margin: 0 auto 16px; border-radius: 12px; background: var(--bg-warm); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 20px; }
+.empty-state-illustration { width: 80px; height: 80px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+.empty-state-illustration img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
 .empty-state p { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
 .last-updated { font-size: 11px; color: var(--text-tertiary); margin-left: 12px; font-weight: 400; }
@@ -1552,7 +1553,7 @@ function renderBoard() {
 }
 
 function renderCard(task, showAssignee) {
-  if(!task) return '<div class="empty-state" style="padding:20px 16px"><p style="margin:0;font-size:12px">No primary assigned</p></div>';
+  if(!task) return '<div class="empty-state" style="padding:20px 16px"><div class="empty-state-illustration" style="width:56px;height:56px;margin-bottom:8px"><img src="img/empty-inbox.jpg" alt=""></div><p style="margin:0;font-size:12px">No primary assigned</p></div>';
   const statusClass = task.status === 'in-progress' ? 'status-in-progress' :
     task.status === 'review' ? 'status-review' :
     task.status === 'blocked' ? 'status-blocked' :
@@ -1643,7 +1644,7 @@ function renderDesigner() {
   if(!primary) {
     content.innerHTML = `
       <div class="empty-state" style="max-width:640px;width:100%;padding:48px 24px">
-        <div class="empty-state-illustration">☀️</div>
+        <div class="empty-state-illustration"><img src="img/empty-desk.jpg" alt=""></div>
         <h3>Your slate is clean</h3>
         <p>No primary task right now — enjoy the breathing room,<br>or check in with Lucas for what's next.</p>
       </div>
@@ -2462,7 +2463,7 @@ function renderRequesterQueue() {
           <span class="queue-count">${col.tasks.length}</span>
         </div>
         <div class="kanban-column-cards">
-          ${col.tasks.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px;text-align:center">All clear ✨</div>` :
+          ${col.tasks.length === 0 ? `<div class="empty-state" style="padding:16px"><div class="empty-state-illustration" style="width:48px;height:48px;margin-bottom:6px"><img src="img/all-clear.jpg" alt=""></div><p style="margin:0;font-size:11px">All clear</p></div>` :
             col.tasks.map(task => {
               // Check for deliverable preview (only real URLs)
               const deliverable = task.status === 'complete' && task.attachments ? 
