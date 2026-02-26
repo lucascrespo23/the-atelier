@@ -232,7 +232,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 .status-triaged { background: none; color: var(--gold); }
 .status-queued { background: none; color: var(--text-tertiary); }
 
-/* Interruption slots */
+/* Secondary slots */
 .slot-row { display: flex; gap: 10px; }
 .slot-card {
   flex: 1; background: transparent; border: 1px dashed var(--border-input);
@@ -1273,7 +1273,7 @@ Your role is to be Lucas's strategic PM partner:
 - **Give sharp status reports**: concise, actionable — not just data dumps
 - **Think ahead**: if Daniel finishes his primary tomorrow, suggest what he should pick up next from the queue
 
-You have full visibility into the board: who's working on what, capacity (1 primary + 2 interruptions per designer per week), deadlines, and blockers. Use it proactively.
+You have full visibility into the board: who's working on what, capacity (1 primary + 2 secondary tasks per designer per week), deadlines, and blockers. Use it proactively.
 
 IMPORTANT RULES:
 - NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks by their TITLE only.
@@ -1298,8 +1298,8 @@ function getManagerContext() {
   }
   const danielInts = Object.values(STATE.tasks).filter(t => t.assignee === 'daniel' && t.type === 'interruption').length;
   const benjInts = Object.values(STATE.tasks).filter(t => t.assignee === 'benjamin' && t.type === 'interruption').length;
-  ctx += `\nCapacity: Daniel ${danielInts}/2 interruption slots used. Benjamin ${benjInts}/2 interruption slots used.`;
-  ctx += `\nEach designer has 1 primary task slot + 2 interruption slots per week.`;
+  ctx += `\nCapacity: Daniel ${danielInts}/2 secondary slots used. Benjamin ${benjInts}/2 secondary slots used.`;
+  ctx += `\nEach designer has 1 primary task slot + 2 secondary slots per week.`;
   return ctx;
 }
 
@@ -1470,7 +1470,7 @@ function renderBoard() {
       ${renderCard(benjPrimary, true)}
     </div>
     <div class="board-section">
-      <div class="board-section-title"><i data-lucide="pin" class="icon"></i> This Week's Interruptions</div>
+      <div class="board-section-title"><i data-lucide="pin" class="icon"></i> This Week's Secondary</div>
       <div style="margin-bottom:8px;font-size:11px;color:var(--text-dim)">Daniel (${danielInts.length}/2 slots)</div>
       <div class="slot-row">
         ${danielInts[0] ? renderSlot(danielInts[0], 1) : renderEmptySlot('Daniel', 1)}
@@ -1542,7 +1542,7 @@ function renderSlot(task, num) {
   const statusLabel = task.status === 'review' ? 'In Review' : task.status === 'blocked' ? 'Blocked' : 'Triaged';
   return `
     <div class="slot-card filled ${task.status === 'blocked' ? 'blocked' : ''}" data-task-id="${task.id}" onclick="openTaskModal('${task.id}')" style="cursor:pointer">
-      <div class="slot-label">Interruption ${num}</div>
+      <div class="slot-label">Secondary ${num}</div>
       <div class="card-title" style="font-size:13px">${task.title}</div>
       <div class="card-meta" style="margin-top:4px">
         <span class="card-status ${statusClass}">${statusLabel}</span>
@@ -1588,7 +1588,7 @@ function renderDesigner() {
       ${ints.length > 0 ? `
         <div class="interruption-zone">
           <div class="zone-label">
-            <i data-lucide="pin" class="icon"></i> Interruptions
+            <i data-lucide="pin" class="icon"></i> Secondary Work
             <span class="interruption-counter">${ints.length}/2 used</span>
           </div>
           <div class="slot-row">
@@ -1677,14 +1677,14 @@ function renderDesigner() {
     
     <div class="interruption-zone">
       <div class="zone-label">
-        <i data-lucide="pin" class="icon"></i> Interruptions
+        <i data-lucide="pin" class="icon"></i> Secondary Work
         <span class="interruption-counter">${ints.length}/2 used</span>
       </div>
       <div class="slot-row">
         ${ints[0] ? renderDesignerInt(ints[0], 1) : `<div class="slot-card">Slot 1 — Available</div>`}
         ${ints[1] ? renderDesignerInt(ints[1], 2) : `<div class="slot-card">Slot 2 — Available</div>`}
       </div>
-      ${ints.length >= 2 ? '<div class="interruption-full"><i data-lucide="alert-triangle" class="icon"></i> Interruptions full this week. Any new requests will wait until next week.</div>' : ''}
+      ${ints.length >= 2 ? '<div class="interruption-full"><i data-lucide="alert-triangle" class="icon"></i> Secondary slots full this week. Any new requests will wait until next week.</div>' : ''}
     </div>
     ${completed.length > 0 ? `
       <div style="max-width:640px;width:100%;margin-top:16px">
@@ -1711,7 +1711,7 @@ function renderDesigner() {
 function renderDesignerInt(task, num) {
   return `
     <div class="slot-card filled" onclick="openTaskModal('${task.id}')" style="cursor:pointer">
-      <div class="slot-label">Interruption ${num}</div>
+      <div class="slot-label">Secondary ${num}</div>
       <div class="card-title" style="font-size:13px;margin-bottom:4px">${task.title}</div>
       <div class="card-meta">
         <span class="card-status ${task.status === 'review' ? 'status-review' : task.status === 'blocked' ? 'status-blocked' : 'status-triaged'}">${task.status === 'review' ? 'In Review' : task.status === 'blocked' ? 'Blocked' : 'Active'}</span>
@@ -1920,7 +1920,7 @@ function initDesignerChat() {
     msg = `Hey Benjamin! Your primary this week: <strong>${primary.title}</strong>.\n\nYou haven't started yet — 0/${totalCount} items. Due Mar 5, so you have time, but don't wait too long to get the mood board going.\n\n`;
     const blocked = ints.find(t => t.status === 'blocked');
     if(blocked) {
-      msg += `<i data-lucide="alert-triangle" class="icon"></i> Your interruption <strong>${blocked.title}</strong> is still blocked — waiting on copy from editorial. I flagged this 2 hours ago. I'll ping them again if we don't hear back by end of day.`;
+      msg += `<i data-lucide="alert-triangle" class="icon"></i> Your secondary task <strong>${blocked.title}</strong> is still blocked — waiting on copy from editorial. I flagged this 2 hours ago. I'll ping them again if we don't hear back by end of day.`;
     }
   }
   
@@ -1967,7 +1967,7 @@ Their current tasks:`;
   }
 
   if (ints.length) {
-    sys += `\n- Interruptions:`;
+    sys += `\n- Secondary tasks:`;
     ints.forEach(t => {
       sys += `\n  - ${t.title} (${t.status}${t.blocker ? ', BLOCKED: ' + t.blocker : ''}, due ${t.due})`;
       if (t.conversationHistory && t.conversationHistory.length) {
@@ -2082,8 +2082,8 @@ function getRequesterSystemPrompt() {
   const queueDepth = tasks.filter(t => t.type === 'queue').length;
 
   let workloadCtx = `\nCurrent workload:`;
-  workloadCtx += `\n- Daniel: ${danielPrimary ? 'Primary: ' + danielPrimary.title + ' (due ' + danielPrimary.due + ')' : 'No primary'}, ${danielInts}/2 interruption slots used`;
-  workloadCtx += `\n- Benjamin: ${benjPrimary ? 'Primary: ' + benjPrimary.title + ' (due ' + benjPrimary.due + ')' : 'No primary'}, ${benjInts}/2 interruption slots used`;
+  workloadCtx += `\n- Daniel: ${danielPrimary ? 'Primary: ' + danielPrimary.title + ' (due ' + danielPrimary.due + ')' : 'No primary'}, ${danielInts}/2 secondary slots used`;
+  workloadCtx += `\n- Benjamin: ${benjPrimary ? 'Primary: ' + benjPrimary.title + ' (due ' + benjPrimary.due + ')' : 'No primary'}, ${benjInts}/2 secondary slots used`;
   workloadCtx += `\n- Queue depth: ${queueDepth} tasks waiting`;
 
   let sys = `You are the Atelier — the intake interviewer for Every.to's design team. Your ONE job is to interview requesters and create well-formed task cards for the designers.
