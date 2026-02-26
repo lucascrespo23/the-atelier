@@ -1013,7 +1013,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
   <div class="requester-header-bar">
     <h2>Design Requests</h2>
     <div style="display: flex; gap: 12px;">
-      <button class="templates-btn" onclick="openTemplateLibrary()" style="padding: 10px 24px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition);">Templates</button>
+      <button onclick="openDesignSystemModal()" style="padding: 10px 24px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition);">Design System</button>
       <button class="new-request-btn" onclick="openRequestDrawer()">New Request</button>
     </div>
   </div>
@@ -1049,11 +1049,6 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 
 <!-- TOAST NOTIFICATIONS -->
 <div class="toast-container" id="toastContainer"></div>
-
-<!-- TEMPLATE LIBRARY MODAL -->
-<div class="template-modal" id="templateModal" onclick="if(event.target===this)closeTemplateLibrary()">
-  <div class="template-grid" id="templateGrid"></div>
-</div>
 
 <!-- DESIGN SYSTEM IFRAME MODAL -->
 <div class="template-modal" id="designSystemModal" onclick="if(event.target===this)closeDesignSystemModal()">
