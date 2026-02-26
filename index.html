@@ -1783,7 +1783,7 @@ function closeDeliverableModal() {
   if (modal) modal.remove();
 }
 
-function submitDeliverable(taskId) {
+async function submitDeliverable(taskId) {
   const fileInput = document.getElementById('deliverableFile');
   const linkInput = document.getElementById('deliverableLink');
   const task = STATE.tasks[taskId];
@@ -1800,10 +1800,21 @@ function submitDeliverable(taskId) {
   if (!task.attachments) task.attachments = [];
   
   if (hasFile) {
+    const file = fileInput.files[0];
+    let url = '#';
+    // Upload to Supabase storage
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': file.type, 'x-filename': file.name },
+        body: file
+      });
+      const data = await res.json();
+      if (data.url) url = data.url;
+    } catch(e) { console.warn('Upload failed:', e); }
+    
     task.attachments.push({
-      type: 'deliverable',
-      name: fileInput.files[0].name,
-      url: '#',
+      type: 'deliverable', name: file.name, url,
       addedBy: STATE.team[STATE.currentDesigner].name,
       addedAt: new Date().toISOString().split('T')[0],
       isDeliverable: true
@@ -1813,9 +1824,7 @@ function submitDeliverable(taskId) {
   if (hasLink) {
     const linkName = hasLink.includes('figma.com') ? 'Figma Design' : 'Final Deliverable';
     task.attachments.push({
-      type: 'deliverable',
-      name: linkName,
-      url: linkInput.value.trim(),
+      type: 'deliverable', name: linkName, url: linkInput.value.trim(),
       addedBy: STATE.team[STATE.currentDesigner].name,
       addedAt: new Date().toISOString().split('T')[0],
       isDeliverable: true
@@ -2147,10 +2156,23 @@ Notes: {what they wanted}
 
 let requesterAttachments = [];
 
-function handleRequesterAttachment(input) {
+async function handleRequesterAttachment(input) {
   const file = input.files[0];
   if (!file) return;
-  requesterAttachments.push({ type: 'file', name: file.name, url: '#', addedBy: requesterPerson || 'Requester', addedAt: new Date().toISOString().split('T')[0] });
+  
+  const attachment = { type: 'file', name: file.name, url: '#', addedBy: requesterPerson || 'Requester', addedAt: new Date().toISOString().split('T')[0] };
+  requesterAttachments.push(attachment);
+  
+  // Upload to storage
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': file.type, 'x-filename': file.name },
+      body: file
+    });
+    const data = await res.json();
+    if (data.url) attachment.url = data.url;
+  } catch(e) { console.warn('Upload failed:', e); }
   
   // Show in chat
   const container = document.getElementById('requesterMessages');
@@ -2643,19 +2665,37 @@ function showLinkForm(taskId, context) {
   if (el) { el.style.display = 'flex'; el.querySelector('input').focus(); }
 }
 
-function handleFileUpload(taskId, input, context) {
+async function handleFileUpload(taskId, input, context) {
   const file = input.files[0];
   if (!file) return;
   const task = STATE.tasks[taskId];
   if (!task.attachments) task.attachments = [];
-  task.attachments.push({
-    type: 'file', name: file.name, url: '#', 
-    addedBy: context === 'designer' ? STATE.team[STATE.currentDesigner].name : 'You',
-    addedAt: new Date().toISOString().split('T')[0]
-  });
+  
+  // Upload to Supabase storage
+  const addedBy = context === 'designer' ? STATE.team[STATE.currentDesigner].name : 'You';
+  const placeholder = { type: 'file', name: file.name, url: '#', addedBy, addedAt: new Date().toISOString().split('T')[0], uploading: true };
+  task.attachments.push(placeholder);
   saveState();
   if (context === 'modal') openTaskModal(taskId);
-  if (context === 'designer') renderDesigner();
+  
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': file.type, 'x-filename': file.name },
+      body: file
+    });
+    const data = await res.json();
+    if (data.url) {
+      placeholder.url = data.url;
+      placeholder.uploading = false;
+      saveState();
+      if (context === 'modal') openTaskModal(taskId);
+      if (context === 'designer') renderDesigner();
+      showToast('Uploaded: ' + file.name, 'var(--green)');
+    }
+  } catch(e) {
+    showToast('Upload failed: ' + file.name, 'var(--red)');
+  }
   input.value = '';
 }
 
