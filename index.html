@@ -1159,6 +1159,10 @@ function loadState() {
 }
 function saveState() {
   try { localStorage.setItem('atelier_state', JSON.stringify(STATE)); } catch(e) {}
+  // Re-render all views to keep everything in sync
+  renderBoard();
+  renderRequesterQueue();
+  if (document.getElementById('designerView').classList.contains('active')) renderDesigner();
   // Debounced sync to Supabase
   clearTimeout(saveState._timer);
   saveState._timer = setTimeout(() => syncToSupabase(), 500);
@@ -1457,11 +1461,12 @@ function renderBoard() {
   const panel = document.getElementById('boardPanel');
   const tasks = STATE.tasks;
   
-  const danielPrimary = Object.values(tasks).find(t => t.assignee === 'daniel' && t.type === 'primary');
-  const benjPrimary = Object.values(tasks).find(t => t.assignee === 'benjamin' && t.type === 'primary');
-  const danielInts = Object.values(tasks).filter(t => t.assignee === 'daniel' && t.type === 'interruption');
-  const benjInts = Object.values(tasks).filter(t => t.assignee === 'benjamin' && t.type === 'interruption');
-  const queue = Object.values(tasks).filter(t => t.type === 'queue');
+  const danielPrimary = Object.values(tasks).find(t => t.assignee === 'daniel' && t.type === 'primary' && t.status !== 'complete');
+  const benjPrimary = Object.values(tasks).find(t => t.assignee === 'benjamin' && t.type === 'primary' && t.status !== 'complete');
+  const danielInts = Object.values(tasks).filter(t => t.assignee === 'daniel' && t.type === 'interruption' && t.status !== 'complete');
+  const benjInts = Object.values(tasks).filter(t => t.assignee === 'benjamin' && t.type === 'interruption' && t.status !== 'complete');
+  const queue = Object.values(tasks).filter(t => t.type === 'queue' && t.status !== 'complete');
+  const completed = Object.values(tasks).filter(t => t.status === 'complete');
   
   panel.innerHTML = `
     <div class="board-section">
@@ -1486,6 +1491,17 @@ function renderBoard() {
       <div class="board-section-title"><i data-lucide="inbox" class="icon"></i> Queue (${queue.length})</div>
       ${queue.map(t => renderCard(t, false)).join('')}
     </div>
+    ${completed.length > 0 ? `
+      <div class="board-section">
+        <div class="board-section-title" style="cursor:pointer" onclick="document.getElementById('managerCompleted').classList.toggle('hidden')">
+          <i data-lucide="check-circle" class="icon"></i> Completed (${completed.length})
+          <span style="font-size:9px;margin-left:4px">▼</span>
+        </div>
+        <div id="managerCompleted" class="hidden">
+          ${completed.map(t => renderCard(t, true)).join('')}
+        </div>
+      </div>
+    ` : ''}
   `;
   lucide.createIcons();
 }
