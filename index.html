@@ -28,6 +28,20 @@
   --transition: all 0.2s ease;
 }
 
+[data-theme="dark"] {
+  --bg: #1a1918;
+  --bg-warm: #222120;
+  --bg-hover: #2a2928;
+  --bg-card: #262524;
+  --text: #e8e4df;
+  --text-secondary: #9b9590;
+  --text-tertiary: #6b6560;
+  --border: #3a3835;
+  --border-input: #4a4845;
+  --divider: #333130;
+  --accent: #d4815c;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -839,6 +853,83 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 
 .hidden { display: none !important; }
 
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast-container {
+  position: fixed; top: 64px; right: 24px; z-index: 500;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 20px; min-width: 280px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 3.7s forwards;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(-8px); }
+}
+.toast .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ===== DELIVERABLE PREVIEWS ===== */
+.deliverable-preview {
+  width: 100%; height: 120px; border-radius: 8px; overflow: hidden; 
+  margin-bottom: 12px; border: 1px solid var(--border);
+}
+.deliverable-preview img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.deliverable-preview iframe {
+  width: 100%; height: 100%; border: none;
+}
+.deliverable-preview .link-preview {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; background: var(--bg-warm); color: var(--text-secondary);
+  font-size: 13px; gap: 8px;
+}
+
+/* ===== TEMPLATE LIBRARY ===== */
+.template-modal {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s;
+}
+.template-modal.show { opacity: 1; }
+.template-modal iframe {
+  width: 90vw; height: 85vh; border: none;
+  border-radius: 16px; background: white;
+}
+.template-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px; padding: 24px; max-width: 800px; width: 90vw;
+  background: var(--bg-card); border-radius: 16px; max-height: 80vh; overflow-y: auto;
+}
+.template-card {
+  background: var(--bg-warm); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; cursor: pointer;
+  transition: var(--transition); display: flex; flex-direction: column; gap: 8px;
+}
+.template-card:hover {
+  transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.template-card-icon {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; color: white;
+  margin-bottom: 4px;
+}
+.template-card-title {
+  font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+}
+.template-card-desc {
+  font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+}
+
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
   .chat-panel { width: 100%; min-width: 0; }
@@ -856,10 +947,15 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 <!-- View Selector -->
 <div id="viewSelector">
   <div class="logo">The <span>Atelier</span></div>
-  <div class="view-tabs">
-    <button class="view-tab active" onclick="switchView('manager')">Manager</button>
-    <button class="view-tab" onclick="switchView('designer')">Designer</button>
-    <button class="view-tab" onclick="switchView('requester')">Requester</button>
+  <div style="display: flex; align-items: center; gap: 24px;">
+    <button id="themeToggle" onclick="toggleDarkMode()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; display: flex; align-items: center; transition: color 0.2s;">
+      <i data-lucide="moon" id="themeIcon" class="icon"></i>
+    </button>
+    <div class="view-tabs">
+      <button class="view-tab active" onclick="switchView('manager')">Manager</button>
+      <button class="view-tab" onclick="switchView('designer')">Designer</button>
+      <button class="view-tab" onclick="switchView('requester')">Requester</button>
+    </div>
   </div>
 </div>
 
@@ -915,7 +1011,10 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
   <!-- Header bar -->
   <div class="requester-header-bar">
     <h2>Design Requests</h2>
-    <button class="new-request-btn" onclick="openRequestDrawer()">New Request</button>
+    <div style="display: flex; gap: 12px;">
+      <button class="templates-btn" onclick="openTemplateLibrary()" style="padding: 10px 24px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition);">Templates</button>
+      <button class="new-request-btn" onclick="openRequestDrawer()">New Request</button>
+    </div>
   </div>
   
   <!-- Queue view -->
@@ -945,6 +1044,19 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
   <div class="modal-box" id="taskModalContent">
     <button class="modal-close" onclick="closeTaskModal()">✕</button>
   </div>
+</div>
+
+<!-- TOAST NOTIFICATIONS -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- TEMPLATE LIBRARY MODAL -->
+<div class="template-modal" id="templateModal" onclick="if(event.target===this)closeTemplateLibrary()">
+  <div class="template-grid" id="templateGrid"></div>
+</div>
+
+<!-- DESIGN SYSTEM IFRAME MODAL -->
+<div class="template-modal" id="designSystemModal" onclick="if(event.target===this)closeDesignSystemModal()">
+  <iframe id="designSystemFrame" src=""></iframe>
 </div>
 
 <script>
@@ -1051,6 +1163,38 @@ function loadState() {
 }
 function saveState() {
   try { localStorage.setItem('atelier_state', JSON.stringify(STATE)); } catch(e) {} 
+}
+
+// ===== DARK MODE =====
+function toggleDarkMode() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('atelier_theme', next);
+  // Update icon
+  document.getElementById('themeIcon').setAttribute('data-lucide', next === 'dark' ? 'sun' : 'moon');
+  lucide.createIcons();
+}
+
+// Init theme on load
+const savedTheme = localStorage.getItem('atelier_theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+// Set initial icon
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('themeIcon')) {
+    document.getElementById('themeIcon').setAttribute('data-lucide', savedTheme === 'dark' ? 'sun' : 'moon');
+    lucide.createIcons();
+  }
+});
+
+// ===== TOAST NOTIFICATIONS =====
+function showToast(message, color = 'var(--accent)') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<div class="toast-dot" style="background:${color}"></div>${message}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
 // ===== VIEW SWITCHING =====
@@ -1315,15 +1459,33 @@ function renderCard(task, showAssignee) {
   const statusClass = task.status === 'in-progress' ? 'status-in-progress' :
     task.status === 'review' ? 'status-review' :
     task.status === 'blocked' ? 'status-blocked' :
-    task.status === 'triaged' ? 'status-triaged' : 'status-queued';
+    task.status === 'triaged' ? 'status-triaged' : 
+    task.status === 'complete' ? 'status-complete' : 'status-queued';
   const statusLabel = task.status === 'in-progress' ? 'In Progress' :
     task.status === 'review' ? 'In Review' :
     task.status === 'blocked' ? 'Blocked' :
-    task.status === 'triaged' ? 'Triaged' : 'Queued';
+    task.status === 'triaged' ? 'Triaged' : 
+    task.status === 'complete' ? 'Complete' : 'Queued';
+  
+  // Check for deliverable preview
+  const deliverable = task.status === 'complete' && task.attachments ? 
+    task.attachments.find(a => a.isDeliverable) : null;
+  let deliverablePreview = '';
+  if (deliverable) {
+    if (deliverable.url.includes('figma.com')) {
+      const embedUrl = `https://www.figma.com/embed?embed_host=atelier&url=${encodeURIComponent(deliverable.url)}`;
+      deliverablePreview = `<div class="deliverable-preview"><iframe src="${embedUrl}"></iframe></div>`;
+    } else if (deliverable.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+      deliverablePreview = `<div class="deliverable-preview"><img src="${deliverable.url}" alt="${deliverable.name}"></div>`;
+    } else {
+      deliverablePreview = `<div class="deliverable-preview"><div class="link-preview"><i data-lucide="external-link" class="icon"></i>${deliverable.name}</div></div>`;
+    }
+  }
   
   return `
     <div class="task-card priority-${task.priority} ${task.status === 'blocked' ? 'blocked' : ''}" data-task-id="${task.id}" onclick="openTaskModal('${task.id}')">
       ${task.status === 'blocked' ? '<i data-lucide="alert-circle" class="icon blocked-icon" style="color:var(--red)"></i>' : ''}
+      ${deliverablePreview}
       ${showAssignee ? `<div class="card-assignee">${task.assignee === 'daniel' ? 'Daniel' : task.assignee === 'benjamin' ? 'Benjamin' : 'Unassigned'}</div>` : ''}
       <div class="card-title">${task.title}</div>
       <div class="card-meta">
@@ -1502,7 +1664,14 @@ function renderAttachmentListReadOnly(task) {
 
 function toggleCheck(taskId, index) {
   const task = STATE.tasks[taskId];
+  const wasChecked = task.checklist[index].done;
   task.checklist[index].done = !task.checklist[index].done;
+  
+  // Show toast only when checking ON
+  if (!wasChecked && task.checklist[index].done) {
+    showToast('Checked off: ' + task.checklist[index].text, 'var(--green)');
+  }
+  
   const done = task.checklist.filter(c => c.done).length;
   task.progress = Math.round(done / task.checklist.length * 100);
   saveState();
@@ -1511,8 +1680,102 @@ function toggleCheck(taskId, index) {
 }
 
 function markComplete(taskId) {
+  // Show deliverable attachment modal
+  showDeliverableModal(taskId);
+}
+
+function showDeliverableModal(taskId) {
+  const task = STATE.tasks[taskId];
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay visible show';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width: 480px;">
+      <button class="modal-close" onclick="closeDeliverableModal()">✕</button>
+      <div class="modal-title">Attach Final Deliverable</div>
+      <div style="color: var(--text-secondary); font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+        Before marking <strong>${task.title}</strong> as complete, please attach your final deliverable (required for handoff).
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 8px;">File Upload</label>
+        <input type="file" id="deliverableFile" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 8px; font-size: 14px; background: var(--bg-card); color: var(--text);">
+      </div>
+      
+      <div style="text-align: center; margin: 16px 0; color: var(--text-tertiary); font-size: 12px;">OR</div>
+      
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 8px;">Link (Figma, Drive, etc.)</label>
+        <input type="text" id="deliverableLink" placeholder="https://..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 8px; font-size: 14px; background: var(--bg-card); color: var(--text); outline: none;">
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button onclick="closeDeliverableModal()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 13px; cursor: pointer;">Cancel</button>
+        <button onclick="submitDeliverable('${taskId}')" style="padding: 8px 16px; border-radius: 8px; border: none; background: var(--text); color: white; font-size: 13px; cursor: pointer;">Mark Complete</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function closeDeliverableModal() {
+  const modal = document.querySelector('.modal-overlay.visible.show');
+  if (modal) modal.remove();
+}
+
+function submitDeliverable(taskId) {
+  const fileInput = document.getElementById('deliverableFile');
+  const linkInput = document.getElementById('deliverableLink');
+  const task = STATE.tasks[taskId];
+  
+  const hasFile = fileInput.files.length > 0;
+  const hasLink = linkInput.value.trim();
+  
+  if (!hasFile && !hasLink) {
+    alert('Please provide either a file or link before marking complete.');
+    return;
+  }
+  
+  // Add deliverable attachment
+  if (!task.attachments) task.attachments = [];
+  
+  if (hasFile) {
+    task.attachments.push({
+      type: 'deliverable',
+      name: fileInput.files[0].name,
+      url: '#',
+      addedBy: STATE.team[STATE.currentDesigner].name,
+      addedAt: new Date().toISOString().split('T')[0],
+      isDeliverable: true
+    });
+  }
+  
+  if (hasLink) {
+    const linkName = hasLink.includes('figma.com') ? 'Figma Design' : 'Final Deliverable';
+    task.attachments.push({
+      type: 'deliverable',
+      name: linkName,
+      url: linkInput.value.trim(),
+      addedBy: STATE.team[STATE.currentDesigner].name,
+      addedAt: new Date().toISOString().split('T')[0],
+      isDeliverable: true
+    });
+  }
+  
+  // Mark task complete
+  task.status = 'complete';
+  task.progress = 100;
+  if (task.checklist) task.checklist.forEach(c => c.done = true);
+  
+  saveState();
+  renderBoard();
+  renderDesigner();
+  renderRequesterQueue();
+  
+  closeDeliverableModal();
+  
+  // Show chat message
   addMsg('designerMessages', 'Mark as complete', 'user');
-  addMsg('designerMessages', `Great work! I've marked <strong>${STATE.tasks[taskId].title}</strong> as complete. Lucas and the requester have been notified. \n\nReady for your next task — check with Lucas or I can pull something from the queue.`, 'ai', 500);
+  addMsg('designerMessages', `Great work! I've marked <strong>${task.title}</strong> as complete. Lucas and the requester have been notified. \n\nReady for your next task — check with Lucas or I can pull something from the queue.`, 'ai', 500);
   toggleChatWidget(true);
 }
 
@@ -1921,6 +2184,9 @@ async function requesterSend() {
         renderBoard();
         renderRequesterQueue();
         requesterAttachments = []; // Reset for next request
+        
+        // Show toast notification
+        showToast('New request: ' + data.title, 'var(--green)');
       }
       
       // Show a clean version (remove the raw tag block, show summary card)
@@ -2022,23 +2288,41 @@ function renderRequesterQueue() {
         </div>
         <div class="kanban-column-cards">
           ${col.tasks.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px;text-align:center">No tasks</div>` :
-            col.tasks.map(task => `
-              <div class="queue-card" onclick="openTaskModalReadOnly('${task.id}')">
-                <div class="queue-card-title">${task.title}</div>
-                <div class="queue-card-meta">
-                  <span class="queue-card-assignee">${task.assignee ? STATE.team[task.assignee]?.name || task.assignee : 'Unassigned'}</span>
-                  <span>Due ${task.due}</span>
-                </div>
-                <div class="queue-card-meta" style="margin-top:2px">
-                  <span>${task.requester}</span>
-                </div>
-                ${task.progress > 0 ? `
-                  <div class="queue-card-progress">
-                    <div class="queue-card-progress-bar" style="width:${task.progress}%"></div>
+            col.tasks.map(task => {
+              // Check for deliverable preview
+              const deliverable = task.status === 'complete' && task.attachments ? 
+                task.attachments.find(a => a.isDeliverable) : null;
+              let deliverablePreview = '';
+              if (deliverable) {
+                if (deliverable.url.includes('figma.com')) {
+                  const embedUrl = `https://www.figma.com/embed?embed_host=atelier&url=${encodeURIComponent(deliverable.url)}`;
+                  deliverablePreview = `<div class="deliverable-preview"><iframe src="${embedUrl}"></iframe></div>`;
+                } else if (deliverable.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                  deliverablePreview = `<div class="deliverable-preview"><img src="${deliverable.url}" alt="${deliverable.name}"></div>`;
+                } else {
+                  deliverablePreview = `<div class="deliverable-preview"><div class="link-preview"><i data-lucide="external-link" class="icon"></i>${deliverable.name}</div></div>`;
+                }
+              }
+              
+              return `
+                <div class="queue-card" onclick="openTaskModalReadOnly('${task.id}')">
+                  ${deliverablePreview}
+                  <div class="queue-card-title">${task.title}</div>
+                  <div class="queue-card-meta">
+                    <span class="queue-card-assignee">${task.assignee ? STATE.team[task.assignee]?.name || task.assignee : 'Unassigned'}</span>
+                    <span>Due ${task.due}</span>
                   </div>
-                ` : ''}
-              </div>
-            `).join('')}
+                  <div class="queue-card-meta" style="margin-top:2px">
+                    <span>${task.requester}</span>
+                  </div>
+                  ${task.progress > 0 ? `
+                    <div class="queue-card-progress">
+                      <div class="queue-card-progress-bar" style="width:${task.progress}%"></div>
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
         </div>
       </div>
     `;
@@ -2193,7 +2477,14 @@ function closeTaskModal() {
 
 function modalToggleCheck(taskId, index) {
   const task = STATE.tasks[taskId];
+  const wasChecked = task.checklist[index].done;
   task.checklist[index].done = !task.checklist[index].done;
+  
+  // Show toast only when checking ON
+  if (!wasChecked && task.checklist[index].done) {
+    showToast('Checked off: ' + task.checklist[index].text, 'var(--green)');
+  }
+  
   const done = task.checklist.filter(c => c.done).length;
   task.progress = Math.round(done / task.checklist.length * 100);
   saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
@@ -2232,17 +2523,30 @@ function modalAssign(taskId, value) {
   task.assignee = value || null;
   if (!value) { task.type = 'queue'; task.status = 'queued'; }
   else if (task.type === 'queue') { task.type = 'interruption'; task.slot = 1; if (task.status === 'queued') task.status = 'triaged'; }
+  
+  if (value) {
+    const name = STATE.team[value]?.name || value;
+    showToast(name + ' assigned to ' + task.title);
+  }
+  
   saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
 }
 
 function modalSetStatus(taskId, status) {
   const task = STATE.tasks[taskId];
+  const statusLabel = status === 'in-progress' ? 'In Progress' : 
+    status === 'review' ? 'Review' : 
+    status === 'triaged' ? 'Triaged' : 
+    status === 'complete' ? 'Complete' : status;
+  
   if (status === 'complete') {
     task.status = 'complete'; task.progress = 100;
     if (task.checklist) task.checklist.forEach(c => c.done = true);
   } else {
     task.status = status;
   }
+  
+  showToast('Task moved to ' + statusLabel);
   saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
 }
 
@@ -2318,6 +2622,110 @@ function removeAttachment(taskId, index) {
     openTaskModal(taskId); 
     renderDesigner(); 
   }
+}
+
+// ===== TEMPLATE LIBRARY =====
+function openTemplateLibrary() {
+  const modal = document.getElementById('templateModal');
+  const grid = document.getElementById('templateGrid');
+  
+  grid.innerHTML = `
+    <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+      <h3 style="font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin: 0;">Template Library</h3>
+      <button onclick="closeTemplateLibrary()" style="background: none; border: none; color: var(--text-tertiary); font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    
+    <div class="template-card" onclick="openDesignSystem()">
+      <div class="template-card-icon"><i data-lucide="palette" class="icon"></i></div>
+      <div class="template-card-title">Parthenon Design System</div>
+      <div class="template-card-desc">Browse the complete design system documentation, components, and guidelines.</div>
+    </div>
+    
+    <div class="template-card" onclick="useTemplate('social-media')">
+      <div class="template-card-icon"><i data-lucide="share-2" class="icon"></i></div>
+      <div class="template-card-title">Social Media Kit Request</div>
+      <div class="template-card-desc">Request templates for Instagram, Twitter, LinkedIn, and other social platforms.</div>
+    </div>
+    
+    <div class="template-card" onclick="useTemplate('landing-page')">
+      <div class="template-card-icon"><i data-lucide="monitor" class="icon"></i></div>
+      <div class="template-card-title">Landing Page Request</div>
+      <div class="template-card-desc">Request a new landing page design for product launches or campaigns.</div>
+    </div>
+    
+    <div class="template-card" onclick="useTemplate('email-header')">
+      <div class="template-card-icon"><i data-lucide="mail" class="icon"></i></div>
+      <div class="template-card-title">Email Header Request</div>
+      <div class="template-card-desc">Request email newsletter headers, banners, and templates.</div>
+    </div>
+    
+    <div class="template-card" onclick="useTemplate('presentation')">
+      <div class="template-card-icon"><i data-lucide="presentation" class="icon"></i></div>
+      <div class="template-card-title">Presentation Design</div>
+      <div class="template-card-desc">Request slides, decks, and presentation materials for meetings or events.</div>
+    </div>
+    
+    <div class="template-card" onclick="useTemplate('brand-assets')">
+      <div class="template-card-icon"><i data-lucide="image" class="icon"></i></div>
+      <div class="template-card-title">Brand Asset Request</div>
+      <div class="template-card-desc">Request logos, brand guidelines, icons, and other brand materials.</div>
+    </div>
+  `;
+  
+  modal.classList.add('show');
+  lucide.createIcons();
+}
+
+function closeTemplateLibrary() {
+  const modal = document.getElementById('templateModal');
+  modal.classList.remove('show');
+}
+
+function openDesignSystem() {
+  closeTemplateLibrary();
+  const modal = document.getElementById('designSystemModal');
+  const iframe = document.getElementById('designSystemFrame');
+  iframe.src = 'https://parthenon-design-system.vercel.app/';
+  modal.classList.add('show');
+}
+
+function closeDesignSystemModal() {
+  const modal = document.getElementById('designSystemModal');
+  const iframe = document.getElementById('designSystemFrame');
+  modal.classList.remove('show');
+  iframe.src = '';
+}
+
+function useTemplate(templateType) {
+  closeTemplateLibrary();
+  openRequestDrawer();
+  
+  // Pre-fill template message
+  const templates = {
+    'social-media': 'I need a social media kit for [product/campaign]. Platforms: Instagram, Twitter, LinkedIn. Please include post templates, story templates, and profile banners.',
+    'landing-page': 'I need a landing page design for [product/campaign]. The page should be conversion-focused with clear CTAs and modern design that matches our brand.',
+    'email-header': 'I need an email header template for our weekly newsletter. Should be responsive and include space for dynamic headlines and featured content.',
+    'presentation': 'I need a presentation design for [event/meeting]. Approximately [X] slides covering [topic]. Should follow our brand guidelines and be visually engaging.',
+    'brand-assets': 'I need brand assets including [logos/guidelines/icons]. These will be used for [purpose/campaign] and should maintain consistency with our current brand identity.'
+  };
+  
+  const message = templates[templateType] || '';
+  
+  // Wait for drawer to open, then populate
+  setTimeout(() => {
+    const input = document.getElementById('requesterInput');
+    if (input) {
+      input.value = message;
+      input.focus();
+      // Move cursor to end and select placeholder text
+      const placeholderMatch = message.match(/\[([^\]]+)\]/);
+      if (placeholderMatch) {
+        const start = message.indexOf(placeholderMatch[0]);
+        const end = start + placeholderMatch[0].length;
+        input.setSelectionRange(start, end);
+      }
+    }
+  }, 300);
 }
 
 // ===== INIT =====
