@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Atelier — Design Team Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="config.js" onerror=""></script>
+<style>
+:root {
+  --bg: #F9F8F2;
+  --bg-warm: #f7f3ed;
+  --bg-hover: #f3efe8;
+  --bg-card: #ffffff;
+  --text: #2d2b28;
+  --text-secondary: #8b8680;
+  --text-tertiary: #b0a99f;
+  --border: #ebe6de;
+  --border-input: #ddd8d0;
+  --divider: #f0ebe4;
+  --accent: #c4704b;
+  --green: #6b8f71;
+  --red: #c46b5e;
+  --purple: #8b7aab;
+  --gold: #b89650;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --transition: all 0.2s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg); color: var(--text); overflow: hidden;
+  height: 100vh; font-size: 14px; line-height: 1.65;
+  font-weight: 400; letter-spacing: -0.01em;
+}
+h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500; color: var(--text); }
+
+/* ===== NAV BAR ===== */
+#viewSelector {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 52px;
+}
+#viewSelector .logo {
+  font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 500;
+  color: #9c8b7a; letter-spacing: 0.3px;
+}
+#viewSelector .logo span { color: var(--accent); }
+.view-tabs { display: flex; gap: 24px; }
+.view-tab {
+  padding: 0; border: none; border-radius: 0;
+  background: none; color: var(--text-tertiary); font-size: 13px;
+  font-weight: 400; cursor: pointer; transition: color 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+.view-tab:hover { color: var(--text-secondary); }
+.view-tab.active { color: var(--text); font-weight: 500; }
+
+/* ===== VIEWS CONTAINER ===== */
+.view { display: none; height: 100vh; padding-top: 52px; }
+.view.active { display: flex; }
+
+/* ===== MANAGER VIEW ===== */
+#managerView { display: none; flex-direction: row; }
+#managerView.active { display: flex; }
+
+/* Chat Panel — white card */
+.chat-panel {
+  width: 480px; min-width: 400px; height: calc(100% - 48px); display: flex; flex-direction: column;
+  background: var(--bg-card); margin: 24px 16px 24px 24px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.chat-header {
+  padding: 24px 28px 16px; border-bottom: 1px solid var(--divider);
+}
+.chat-header h2 { font-size: 17px; color: var(--text); margin-bottom: 3px; font-weight: 500; }
+.chat-header p { font-size: 13px; color: var(--text-secondary); font-weight: 400; }
+
+.chat-messages {
+  flex: 1; overflow-y: auto; padding: 20px 28px; display: flex;
+  flex-direction: column; gap: 20px;
+  scrollbar-width: thin; scrollbar-color: #ddd transparent;
+}
+
+.msg {
+  max-width: 85%; padding: 16px; border-radius: var(--radius-lg);
+  font-size: 14px; line-height: 1.65; animation: msgIn 0.2s ease-out;
+  white-space: pre-wrap;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.msg.ai {
+  align-self: flex-start; background: var(--bg-card);
+  border: 1px solid var(--border); color: var(--text);
+}
+.msg.ai .sender { display: none; }
+.msg.user {
+  align-self: flex-end; background: #edf2fa;
+  color: var(--text);
+}
+.msg a { color: var(--accent); }
+.msg strong { color: var(--text); font-weight: 600; }
+.msg .task-ref { color: var(--accent); cursor: pointer; text-decoration: underline; text-decoration-style: dotted; }
+.msg .task-ref:hover { text-decoration-style: solid; }
+
+/* Typing indicator */
+.typing-indicator { display: flex; gap: 5px; padding: 16px; align-self: flex-start; }
+.typing-indicator span {
+  width: 6px; height: 6px; border-radius: 50%; background: #c4b5a6;
+  animation: typingFade 1.4s infinite ease-in-out;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingFade {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+
+.chat-input-area {
+  padding: 18px 28px; border-top: 1px solid var(--divider);
+  display: flex; gap: 12px; align-items: center;
+}
+.chat-input {
+  flex: 1; height: 48px; padding: 0 20px; border-radius: 16px;
+  background: var(--bg-card); border: 1px solid var(--border-input);
+  color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif;
+  outline: none; transition: var(--transition);
+}
+.chat-input:focus { border-color: #b0a99f; box-shadow: 0 0 0 3px rgba(196,112,75,0.06); }
+.chat-input::placeholder { color: var(--text-tertiary); }
+.chat-send {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--text); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; transition: var(--transition); flex-shrink: 0;
+}
+.chat-send:hover { opacity: 0.85; }
+
+/* Board Panel — floats on beige, NOT a card */
+.board-panel {
+  flex: 1; height: calc(100% - 48px); overflow-y: auto; padding: 24px 28px 24px 16px;
+  scrollbar-width: thin; scrollbar-color: #ddd transparent;
+  background: transparent;
+}
+.board-section { margin-bottom: 32px; }
+.board-section-title {
+  font-size: 12px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--text-tertiary); margin-bottom: 12px;
+}
+.board-section-title::after { display: none; }
+
+/* Task Cards */
+.task-card {
+  background: var(--bg-card); border-radius: var(--radius);
+  padding: 16px 20px; margin-bottom: 10px;
+  border: 1px solid var(--border);
+  transition: var(--transition); cursor: pointer; position: relative;
+}
+.task-card:hover { transform: translateY(-1px); }
+.task-card.priority-high,
+.task-card.priority-medium,
+.task-card.priority-low,
+.task-card.blocked { border-left: none; }
+.task-card.blocked .blocked-icon {
+  position: absolute; top: 12px; right: 12px;
+}
+.icon { width: 16px; height: 16px; stroke-width: 1.5; display: inline-block; vertical-align: middle; }
+.icon-sm { width: 14px; height: 14px; }
+
+.task-card.glow {
+  box-shadow: 0 0 0 2px rgba(196,112,75,0.25);
+  border-color: var(--accent) !important;
+}
+@keyframes cardPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(196,112,75,0.15); }
+  50% { box-shadow: 0 0 0 3px rgba(196,112,75,0.3); }
+}
+.task-card.glow { animation: cardPulse 2s ease-in-out infinite; }
+
+.task-card .card-title {
+  font-weight: 500; font-size: 14px; color: var(--text); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.task-card .card-title::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+.task-card.priority-high .card-title::before { background: var(--red); }
+.task-card.priority-medium .card-title::before { background: var(--gold); }
+.task-card.priority-low .card-title::before { background: var(--green); }
+.task-card.blocked .card-title::before { background: var(--red); }
+
+.task-card .card-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; padding-left: 14px; }
+.task-card .card-meta span { display: flex; align-items: center; gap: 4px; }
+.task-card .card-assignee { font-size: 12px; color: var(--text-secondary); font-weight: 400; margin-bottom: 4px; padding-left: 14px; }
+.task-card .card-progress {
+  margin-top: 8px; height: 2px; border-radius: 1px; background: var(--border); margin-left: 14px;
+}
+.task-card .card-progress-bar {
+  height: 100%; border-radius: 1px; background: var(--accent);
+  transition: width 0.6s ease;
+}
+
+/* Status — text only, no pill */
+.task-card .card-status {
+  display: inline; padding: 0; border-radius: 0; background: none;
+  font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.status-in-progress { background: none; color: var(--green); }
+.status-review { background: none; color: var(--purple); }
+.status-blocked { background: none; color: var(--red); }
+.status-triaged { background: none; color: var(--gold); }
+.status-queued { background: none; color: var(--text-tertiary); }
+
+/* Interruption slots */
+.slot-row { display: flex; gap: 10px; }
+.slot-card {
+  flex: 1; background: transparent; border: 1px dashed var(--border-input);
+  border-radius: var(--radius); padding: 16px; min-height: 80px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 13px; font-weight: 400;
+  transition: var(--transition);
+}
+.slot-card.filled {
+  border-style: solid; background: var(--bg-card); border-color: var(--border);
+  display: block;
+}
+.slot-card .slot-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+
+/* ===== DESIGNER VIEW ===== */
+#designerView { flex-direction: column; position: relative; }
+#designerView.active { display: flex; }
+
+.designer-picker {
+  display: flex; gap: 24px; padding: 14px 28px;
+  background: var(--bg);
+}
+.designer-btn {
+  padding: 0; border-radius: 0; border: none;
+  background: none; color: var(--text-tertiary); font-size: 13px; font-weight: 400;
+  cursor: pointer; transition: color 0.2s ease; font-family: 'Inter', sans-serif;
+}
+.designer-btn:hover { color: var(--text-secondary); }
+.designer-btn.active { color: var(--text); font-weight: 500; }
+
+.designer-content {
+  flex: 1; overflow-y: auto; padding: 40px 48px; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.primary-zone {
+  background: var(--bg-card); border-radius: var(--radius-lg); padding: 40px;
+  border: 1px solid var(--border); margin-bottom: 32px;
+  max-width: 640px; width: 100%; cursor: pointer;
+}
+.primary-zone .zone-label {
+  font-size: 12px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--text-tertiary); margin-bottom: 16px;
+}
+.primary-zone .task-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--text); margin-bottom: 12px; font-weight: 500; }
+.primary-zone .task-brief { color: var(--text-secondary); font-size: 15px; line-height: 1.7; margin-bottom: 28px; }
+.primary-zone .task-details { display: flex; gap: 32px; margin-bottom: 28px; flex-wrap: wrap; }
+.detail-item { display: flex; flex-direction: column; gap: 2px; }
+.detail-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); }
+.detail-item .value { font-size: 14px; font-weight: 500; color: var(--text); }
+
+.checklist { list-style: none; margin-bottom: 20px; }
+.checklist li {
+  padding: 8px 0; border-bottom: 1px solid var(--divider);
+  display: flex; align-items: center; gap: 10px; font-size: 14px;
+  cursor: pointer; transition: var(--transition); color: var(--text);
+}
+.checklist li:hover { background: var(--bg-hover); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: var(--radius); }
+.checklist li.done { color: var(--text-tertiary); text-decoration: line-through; }
+.check-box {
+  width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid #d4cfc7;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: var(--transition);
+}
+.checklist li.done .check-box { background: var(--accent); border-color: var(--accent); }
+.checklist li.done .check-box::after { content: '✓'; color: white; font-size: 10px; font-weight: 700; }
+
+.action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.action-btn {
+  padding: 8px 20px; border-radius: 10px; border: 1px solid #d4cfc7; font-size: 13px;
+  font-weight: 500; cursor: pointer; transition: var(--transition);
+  font-family: 'Inter', sans-serif; background: var(--bg-card);
+}
+.action-btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+.action-btn.primary:hover { opacity: 0.85; }
+.action-btn.danger { color: var(--red); border-color: #d4cfc7; background: var(--bg-card); }
+.action-btn.danger:hover { background: var(--bg-warm); }
+.action-btn.secondary { color: var(--text-secondary); }
+.action-btn.secondary:hover { background: var(--bg-warm); }
+
+.interruption-zone { margin-bottom: 24px; max-width: 640px; width: 100%; }
+.interruption-zone .zone-label {
+  font-size: 12px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--text-tertiary); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.interruption-counter {
+  background: none; color: var(--gold); padding: 0;
+  font-size: 11px; font-weight: 500;
+}
+.interruption-full {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 16px; color: var(--red);
+  font-size: 13px; margin-top: 10px;
+}
+
+/* Intercom-style chat widget */
+.chat-bubble {
+  position: fixed; bottom: 24px; right: 24px; z-index: 95;
+  width: 56px; height: 56px; border-radius: 50%; background: var(--accent);
+  color: white; border: none; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 20px;
+  box-shadow: 0 4px 12px rgba(196,112,75,0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.chat-bubble:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(196,112,75,0.3);
+}
+.chat-widget {
+  position: fixed; bottom: 90px; right: 24px; z-index: 90;
+  width: 380px; height: 500px; background: var(--bg-card);
+  border-radius: var(--radius-lg); border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  transform: translateY(20px) scale(0.95);
+  opacity: 0; visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column;
+}
+.chat-widget.open {
+  transform: translateY(0) scale(1);
+  opacity: 1; visibility: visible;
+}
+.widget-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--divider);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.widget-header h3 { font-size: 16px; font-weight: 500; color: var(--text); }
+.widget-close {
+  background: none; border: none; color: var(--text-tertiary);
+  cursor: pointer; font-size: 18px; padding: 4px;
+}
+.widget-close:hover { color: var(--text-secondary); }
+.widget-messages {
+  flex: 1; overflow-y: auto; padding: 16px 20px; display: flex;
+  flex-direction: column; gap: 16px;
+}
+.widget-input-area {
+  padding: 16px 20px; border-top: 1px solid var(--divider);
+  display: flex; gap: 8px; align-items: center;
+}
+
+/* Original request chat history (designer view) */
+.view-request-toggle {
+  color: var(--text-tertiary); font-size: 12px; cursor: pointer;
+  text-decoration: none; margin-bottom: 16px; display: inline-block;
+}
+.view-request-toggle:hover { color: var(--accent); }
+.request-history {
+  display: none; margin-bottom: 20px; padding: 16px; background: var(--bg-warm);
+  border-radius: var(--radius); border: 1px solid var(--border);
+}
+.request-history.expanded { display: block; }
+.request-history .history-title {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 12px;
+}
+.history-msg {
+  margin-bottom: 12px; font-size: 13px; line-height: 1.6;
+}
+.history-msg .msg-author {
+  font-weight: 500; color: var(--text); margin-bottom: 4px;
+}
+.history-msg .msg-content { color: var(--text-secondary); }
+
+/* ===== REQUESTER VIEW ===== */
+#requesterView { flex-direction: column; background: var(--bg); overflow: hidden; position: relative; }
+#requesterView.active { display: flex; }
+
+/* Queue-first layout */
+.requester-header-bar {
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg-card); flex-shrink: 0;
+}
+.requester-header-bar h2 {
+  font-family: 'Playfair Display', serif; font-size: 20px;
+  font-weight: 500; color: var(--text);
+}
+.new-request-btn {
+  padding: 10px 24px; border-radius: 12px; border: none;
+  background: var(--accent); color: white; font-size: 14px;
+  font-weight: 500; cursor: pointer; transition: var(--transition);
+}
+.new-request-btn:hover { opacity: 0.9; }
+
+.requester-queue-view {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  max-width: 800px; margin: 0 auto; width: 100%;
+}
+
+/* New Request drawer */
+.request-drawer {
+  position: fixed; top: 52px; right: 0; bottom: 0; width: 420px;
+  background: var(--bg-card); border-left: 1px solid var(--border);
+  transform: translateX(100%); transition: transform 0.3s ease;
+  display: flex; flex-direction: column; z-index: 80;
+}
+.request-drawer.open { transform: translateX(0); }
+.drawer-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--divider);
+  display: flex; align-items: center; justify-content: between;
+}
+.drawer-header h3 {
+  font-family: 'Playfair Display', serif; font-size: 18px;
+  font-weight: 500; color: var(--text); flex: 1;
+}
+.drawer-close {
+  background: none; border: none; color: var(--text-tertiary);
+  cursor: pointer; font-size: 20px; padding: 4px;
+}
+.drawer-close:hover { color: var(--text-secondary); }
+.drawer-messages {
+  flex: 1; overflow-y: auto; padding: 16px 20px; display: flex;
+  flex-direction: column; gap: 16px;
+}
+.drawer-input-area {
+  padding: 16px 20px; border-top: 1px solid var(--divider);
+  display: flex; gap: 8px; align-items: center;
+}
+
+/* Queue groups */
+.queue-group {
+  margin-bottom: 28px;
+}
+.queue-group-title {
+  font-size: 12px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--text-tertiary); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.queue-count {
+  background: var(--bg-warm); color: var(--text-secondary);
+  font-size: 11px; padding: 2px 8px; border-radius: 10px;
+}
+
+.queue-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin-bottom: 10px;
+  cursor: pointer; transition: var(--transition);
+}
+.queue-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.queue-card-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 8px;
+}
+.queue-card-title { font-weight: 500; font-size: 14px; color: var(--text); }
+.queue-card-status {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 4px 8px; border-radius: 6px;
+}
+.queue-card-meta {
+  font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.queue-card-assignee { font-weight: 500; }
+.queue-card-progress {
+  height: 2px; border-radius: 1px; background: var(--border); margin-top: 8px;
+}
+.queue-card-progress-bar {
+  height: 100%; border-radius: 1px; background: var(--accent);
+  transition: width 0.6s ease;
+}
+
+/* Pipeline overview */
+.pipeline-overview {
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  padding: 20px 0 28px; flex-wrap: wrap;
+}
+.pipeline-stage {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 80px;
+}
+.pipeline-stage .stage-icon { color: var(--text-tertiary); }
+.pipeline-stage .stage-count {
+  font-size: 20px; font-weight: 600; color: var(--text); line-height: 1;
+}
+.pipeline-stage .stage-label {
+  font-size: 11px; color: var(--text-secondary); text-transform: uppercase;
+  letter-spacing: 0.5px; font-weight: 500;
+}
+.pipeline-connector {
+  width: 32px; height: 1px; background: var(--border); margin-bottom: 14px;
+}
+
+/* Summary card in chat */
+.summary-card {
+  background: var(--bg-warm); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-top: 8px;
+}
+.summary-card .sc-title { font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.summary-card .sc-row { display: flex; gap: 8px; font-size: 13px; margin-bottom: 4px; color: var(--text-secondary); }
+.summary-card .sc-row span:first-child { width: 20px; text-align: center; }
+
+/* Quick actions as pills (change #7) */
+.quick-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 24px;
+  align-items: center;
+}
+.quick-action {
+  padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary); font-size: 13px;
+  cursor: pointer; transition: var(--transition);
+  font-family: 'Inter', sans-serif; font-weight: 400;
+}
+.quick-action:hover {
+  background: var(--bg-warm); color: var(--text);
+}
+.quick-action + .quick-action::before { display: none; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+/* ===== TASK MODAL ===== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.3); align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s ease;
+}
+.modal-overlay.visible { display: flex; }
+.modal-overlay.show { opacity: 1; }
+.modal-box {
+  background: #ffffff; border-radius: 16px; max-width: 560px; width: 92%;
+  padding: 36px; position: relative; max-height: 85vh; overflow-y: auto;
+  transform: scale(0.95); transition: transform 0.2s ease;
+  scrollbar-width: thin; scrollbar-color: #ddd transparent;
+}
+.modal-overlay.show .modal-box { transform: scale(1); }
+.modal-close {
+  position: absolute; top: 16px; right: 20px; background: none; border: none;
+  color: var(--text-tertiary); font-size: 22px; cursor: pointer; line-height: 1;
+  padding: 4px; font-family: 'Inter', sans-serif;
+}
+.modal-close:hover { color: var(--text-secondary); }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+.modal-status-line { font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.modal-status-line .ms-status { font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.modal-status-line .ms-assignee { color: var(--text-secondary); }
+.modal-brief { color: var(--text-secondary); font-size: 14px; line-height: 1.7; margin-bottom: 24px; }
+.modal-details { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; margin-bottom: 24px; }
+.modal-details .md-item .md-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 2px; }
+.modal-details .md-item .md-value { font-size: 14px; font-weight: 500; color: var(--text); }
+.modal-progress-bar { height: 3px; border-radius: 2px; background: var(--border); margin-top: 4px; }
+.modal-progress-bar .bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+.modal-section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 8px; }
+.modal-checklist { list-style: none; margin-bottom: 12px; }
+.modal-checklist li {
+  padding: 7px 0; border-bottom: 1px solid var(--divider);
+  display: flex; align-items: center; gap: 10px; font-size: 14px;
+  transition: var(--transition); color: var(--text); position: relative;
+}
+.modal-checklist li:hover { color: var(--accent); }
+.modal-checklist li.done { color: var(--text-tertiary); text-decoration: line-through; }
+.modal-checklist li .check-box {
+  width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid #d4cfc7;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: var(--transition); cursor: pointer;
+}
+.modal-checklist li.done .check-box { background: var(--accent); border-color: var(--accent); }
+.modal-checklist li.done .check-box::after { content: '✓'; color: white; font-size: 10px; font-weight: 700; }
+.modal-checklist li .checklist-text { flex: 1; cursor: pointer; }
+.modal-checklist li .checklist-remove {
+  opacity: 0; background: none; border: none; color: var(--text-tertiary);
+  cursor: pointer; font-size: 16px; padding: 2px 4px; transition: opacity 0.15s;
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+}
+.modal-checklist li:hover .checklist-remove { opacity: 1; }
+.modal-checklist li .checklist-remove:hover { color: var(--red); }
+
+/* Add checklist item input (change #8) */
+.add-checklist-item {
+  display: flex; gap: 8px; margin-bottom: 16px; align-items: center;
+}
+.add-checklist-item input {
+  flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-input);
+  font-size: 14px; font-family: 'Inter', sans-serif; background: var(--bg-card);
+  color: var(--text); outline: none;
+}
+.add-checklist-item input:focus { border-color: #b0a99f; }
+.add-checklist-item button {
+  padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-input);
+  background: var(--text); color: #fff; font-size: 12px; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal-activity { margin-bottom: 24px; }
+.modal-activity .act-item { font-size: 13px; color: var(--text-secondary); padding: 4px 0; display: flex; gap: 8px; }
+.modal-activity .act-time { color: var(--text-tertiary); white-space: nowrap; min-width: 70px; }
+.modal-actions {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding-top: 20px; border-top: 1px solid var(--divider);
+}
+.modal-actions select {
+  padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-input);
+  font-size: 13px; font-family: 'Inter', sans-serif; background: var(--bg-card);
+  color: var(--text); cursor: pointer; outline: none;
+}
+.modal-actions .status-btn {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border-input);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: var(--transition);
+  font-family: 'Inter', sans-serif; background: var(--bg-card); color: var(--text-secondary);
+}
+.modal-actions .status-btn:hover { background: var(--bg-warm); }
+.modal-actions .status-btn.active-status { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* ===== ATTACHMENTS ===== */
+.attachments-section { margin-bottom: 24px; }
+.attachment-row {
+  display: flex; align-items: center; gap: 10px; padding: 7px 8px;
+  border-radius: 8px; transition: background 0.15s ease; cursor: default;
+  font-size: 14px; color: var(--text);
+}
+.attachment-row:hover { background: var(--bg-hover); }
+.attachment-row .att-icon { color: var(--text-tertiary); flex-shrink: 0; display: flex; }
+.attachment-row .att-name { flex: 1; }
+.attachment-row .att-name a { color: var(--text); text-decoration: none; }
+.attachment-row .att-name a:hover { color: var(--accent); }
+.attachment-row .att-meta { font-size: 12px; color: var(--text-tertiary); }
+.attachment-row .att-remove {
+  opacity: 0; background: none; border: none; color: var(--text-tertiary);
+  cursor: pointer; font-size: 14px; padding: 2px 4px; transition: opacity 0.15s;
+}
+.attachment-row:hover .att-remove { opacity: 1; }
+.attachment-row .att-remove:hover { color: var(--red); }
+
+.manage-attachments-link {
+  color: var(--text-tertiary); font-size: 12px; cursor: pointer;
+  text-decoration: none; margin-top: 8px; display: inline-block;
+}
+.manage-attachments-link:hover { color: var(--accent); }
+.add-attachment-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; color: var(--text-tertiary);
+  font-size: 12px; cursor: pointer; padding: 4px 0;
+  font-family: 'Inter', sans-serif; transition: color 0.2s;
+}
+.add-attachment-btn:hover { color: var(--accent); }
+.add-attachment-options {
+  display: flex; gap: 8px; margin-top: 8px;
+}
+.add-attachment-options button {
+  padding: 6px 14px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text-secondary); font-size: 12px;
+  cursor: pointer; font-family: 'Inter', sans-serif; transition: var(--transition);
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.add-attachment-options button:hover { background: var(--bg-warm); color: var(--text); }
+.add-link-form {
+  display: flex; gap: 8px; margin-top: 8px; align-items: center;
+}
+.add-link-form input {
+  flex: 1; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-input);
+  font-size: 13px; font-family: 'Inter', sans-serif; background: var(--bg-card);
+  color: var(--text); outline: none;
+}
+.add-link-form input:focus { border-color: #b0a99f; }
+.add-link-form button {
+  padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--text); color: #fff; font-size: 12px; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: var(--transition);
+}
+.add-link-form button:hover { opacity: 0.85; }
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+  .chat-panel { width: 100%; min-width: 0; }
+  .board-panel { display: none; }
+  #managerView .mobile-board-toggle { display: flex; }
+  .primary-zone .task-title { font-size: 22px; }
+  .primary-zone { padding: 24px; }
+  .request-drawer { width: 100%; right: 0; }
+  .chat-widget { width: calc(100vw - 48px); right: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- View Selector -->
+<div id="viewSelector">
+  <div class="logo">The <span>Atelier</span></div>
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('manager')">Manager</button>
+    <button class="view-tab" onclick="switchView('designer')">Designer</button>
+    <button class="view-tab" onclick="switchView('requester')">Requester</button>
+  </div>
+</div>
+
+<!-- MANAGER VIEW -->
+<div id="managerView" class="view active">
+  <div class="chat-panel">
+    <div class="chat-header">
+      <h2 class="heading">Command Center</h2>
+      <p>The Atelier AI — managing your design team</p>
+    </div>
+    <div class="chat-messages" id="managerMessages"></div>
+    <div class="quick-actions" id="managerQuickActions">
+      <button class="quick-action" onclick="managerSend('triage queue')">Triage queue</button>
+      <button class="quick-action" onclick="managerSend('what\'s behind?')">What's behind?</button>
+      <button class="quick-action" onclick="managerSend('how\'s Daniel doing?')">How's Daniel?</button>
+      <button class="quick-action" onclick="managerSend('how\'s Benjamin doing?')">How's Benjamin?</button>
+    </div>
+    <div class="chat-input-area">
+      <input class="chat-input" id="managerInput" placeholder="Talk to The Atelier…" onkeydown="if(event.key==='Enter')managerSend()">
+      <button class="chat-send" onclick="managerSend()">→</button>
+    </div>
+  </div>
+  <div class="board-panel" id="boardPanel"></div>
+</div>
+
+<!-- DESIGNER VIEW -->
+<div id="designerView" class="view">
+  <div class="designer-picker">
+    <button class="designer-btn active" onclick="switchDesigner('daniel')">Daniel</button>
+    <button class="designer-btn" onclick="switchDesigner('benjamin')">Benjamin</button>
+  </div>
+  <div class="designer-content" id="designerContent"></div>
+  
+  <!-- Intercom-style chat widget -->
+  <button class="chat-bubble" onclick="toggleChatWidget()">
+    <i data-lucide="message-circle"></i>
+  </button>
+  <div class="chat-widget" id="designerChatWidget">
+    <div class="widget-header">
+      <h3>Chat with Atelier</h3>
+      <button class="widget-close" onclick="toggleChatWidget()">×</button>
+    </div>
+    <div class="widget-messages" id="designerMessages"></div>
+    <div class="widget-input-area">
+      <input class="chat-input" id="designerInput" placeholder="Talk to your coach…" onkeydown="if(event.key==='Enter')designerSend()">
+      <button class="chat-send" onclick="designerSend()">→</button>
+    </div>
+  </div>
+</div>
+
+<!-- REQUESTER VIEW -->
+<div id="requesterView" class="view">
+  <!-- Header bar -->
+  <div class="requester-header-bar">
+    <h2>Design Requests</h2>
+    <button class="new-request-btn" onclick="openRequestDrawer()">New Request</button>
+  </div>
+  
+  <!-- Queue view -->
+  <div class="requester-queue-view" id="requesterQueueView">
+    <!-- Pipeline overview will be rendered here -->
+    <!-- Queue groups will be rendered here -->
+  </div>
+  
+  <!-- New Request drawer -->
+  <div class="request-drawer" id="requestDrawer">
+    <div class="drawer-header">
+      <h3>New Design Request</h3>
+      <button class="drawer-close" onclick="closeRequestDrawer()">×</button>
+    </div>
+    <div class="drawer-messages" id="requesterMessages"></div>
+    <div class="drawer-input-area">
+      <input class="chat-input" id="requesterInput" placeholder="Describe what you need…" onkeydown="if(event.key==='Enter')requesterSend()">
+      <button class="chat-send" onclick="requesterSend()">→</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-overlay" id="taskModal" onclick="if(event.target===this)closeTaskModal()">
+  <div class="modal-box" id="taskModalContent">
+    <button class="modal-close" onclick="closeTaskModal()">✕</button>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const STATE = loadState() || getDefaultState();
+
+function getDefaultState() {
+  return {
+    team: {
+      daniel: { name: 'Daniel', role: 'Senior Designer', skills: ['brand', 'web', 'product'] },
+      benjamin: { name: 'Benjamin', role: 'Junior Designer', skills: ['social', 'marketing', 'illustration'] }
+    },
+    tasks: {
+      'ATL-001': {
+        id: 'ATL-001', title: 'Cora Landing Page Redesign', assignee: 'daniel', type: 'primary',
+        status: 'in-progress', progress: 60, due: 'Feb 28', requester: 'Product Team',
+        brief: 'Full redesign of the Cora product landing page. Modern, conversion-focused layout with updated brand elements.',
+        priority: 'high',
+        checklist: [
+          { text: 'Wireframe layout', done: true },
+          { text: 'Visual design — hero section', done: true },
+          { text: 'Visual design — features grid', done: false },
+          { text: 'Mobile responsive version', done: false },
+          { text: 'Final review with stakeholders', done: false }
+        ],
+        attachments: [
+          { type: 'link', name: 'Figma - Cora Brand Guide', url: '#', addedBy: 'Lucas', addedAt: '2026-02-23' },
+          { type: 'file', name: 'cora-logo.svg', url: '#', addedBy: 'Product Team', addedAt: '2026-02-22' }
+        ],
+        conversationHistory: [
+          { role: 'user', content: 'We need to redesign the Cora landing page. The current one is from 2022 and doesn\'t reflect our new brand direction.' },
+          { role: 'assistant', content: 'What\'s the main goal for the redesign? Is it conversion optimization, brand alignment, or both?' },
+          { role: 'user', content: 'Both. We want to improve conversion rates and make it feel more premium to match our repositioning.' },
+          { role: 'assistant', content: 'Perfect. Do you have the new copy ready, and what\'s your timeline?' },
+          { role: 'user', content: 'Copy is 80% done, should be final by Friday. We need this live by Feb 28 for the product launch.' }
+        ]
+      },
+      'ATL-002': {
+        id: 'ATL-002', title: 'Newsletter Header Template', assignee: 'daniel', type: 'interruption',
+        slot: 1, status: 'review', progress: 90, due: 'Feb 26', requester: 'Editorial',
+        brief: 'Reusable header template for the Every weekly newsletter. Needs to support dynamic headlines.',
+        priority: 'medium', checklist: [
+          { text: 'Design header layout', done: true },
+          { text: 'Create Figma component', done: true },
+          { text: 'Test with 3 sample headlines', done: false }
+        ]
+      },
+      'ATL-003': {
+        id: 'ATL-003', title: 'Spiral Social Media Kit', assignee: 'benjamin', type: 'primary',
+        status: 'triaged', progress: 0, due: 'Mar 5', requester: 'Marketing',
+        brief: 'Full social media kit for the Spiral product launch. Instagram, Twitter, LinkedIn formats.',
+        priority: 'high', checklist: [
+          { text: 'Mood board & references', done: false },
+          { text: 'Instagram post templates (3)', done: false },
+          { text: 'Twitter header + post', done: false },
+          { text: 'LinkedIn banner', done: false },
+          { text: 'Story templates (2)', done: false }
+        ],
+        attachments: [
+          { type: 'link', name: 'Spiral Brand Assets', url: '#', addedBy: 'Marketing', addedAt: '2026-02-24' }
+        ]
+      },
+      'ATL-004': {
+        id: 'ATL-004', title: 'Every Annual Report Cover', assignee: 'benjamin', type: 'interruption',
+        slot: 1, status: 'blocked', progress: 20, due: 'Mar 1', requester: 'Finance',
+        brief: 'Cover design for the annual report. Blocked — waiting on final copy from editorial.',
+        priority: 'medium', blocker: 'Waiting on copy from editorial team',
+        checklist: [
+          { text: 'Concept sketches', done: true },
+          { text: 'Get final copy from editorial', done: false },
+          { text: 'Final design', done: false }
+        ],
+        attachments: [
+          { type: 'file', name: 'annual-report-draft.pdf', url: '#', addedBy: 'Finance', addedAt: '2026-02-21' }
+        ]
+      },
+      'ATL-005': {
+        id: 'ATL-005', title: 'Sparkle Onboarding Flow', assignee: null, type: 'queue',
+        status: 'queued', progress: 0, due: 'TBD', requester: 'Product Team',
+        brief: 'Design the onboarding flow for Sparkle. Needs user research review first.',
+        priority: 'medium', checklist: []
+      },
+      'ATL-006': {
+        id: 'ATL-006', title: 'Lex Rebrand Presentation', assignee: null, type: 'queue',
+        status: 'queued', progress: 0, due: 'Mar 10', requester: 'Marketing',
+        brief: 'Keynote/Google Slides presentation for the Lex rebrand rollout.',
+        priority: 'low', checklist: []
+      },
+      'ATL-007': {
+        id: 'ATL-007', title: 'Monologue Blog Hero Images', assignee: null, type: 'queue',
+        status: 'queued', progress: 0, due: 'Mar 3', requester: 'Editorial',
+        brief: 'Set of 5 hero images for the Monologue blog relaunch.',
+        priority: 'high', checklist: []
+      }
+    },
+    currentDesigner: 'daniel',
+    requesterStep: 0,
+    requesterDraft: {}
+  };
+}
+
+function loadState() {
+  try { const s = localStorage.getItem('atelier_state'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+}
+function saveState() {
+  try { localStorage.setItem('atelier_state', JSON.stringify(STATE)); } catch(e) {} 
+}
+
+// ===== VIEW SWITCHING =====
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(view + 'View').classList.add('active');
+  document.querySelectorAll('.view-tab').forEach(t => {
+    if(t.textContent.toLowerCase() === view) t.classList.add('active');
+  });
+  if(view === 'manager') { renderBoard(); }
+  if(view === 'designer') { renderDesigner(); }
+  if(view === 'requester') { renderRequesterQueue(); }
+}
+
+// ===== CLAUDE API =====
+const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
+// To run locally, create config.js with: window.CLAUDE_KEY = 'your-key-here';
+const CLAUDE_KEY = window.CLAUDE_KEY || localStorage.getItem('atelier_claude_key') || prompt('Enter Claude API key:');
+const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+
+async function callClaude(systemPrompt, messages, maxTokens = 256) {
+  const res = await fetch(CLAUDE_API, {
+    method: 'POST',
+    headers: {
+      'x-api-key': CLAUDE_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: maxTokens, system: systemPrompt, messages })
+  });
+  if (!res.ok) throw new Error('API error ' + res.status);
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+// ===== MANAGER CHAT =====
+let managerInitDone = false;
+let managerHistory = [];
+
+const MANAGER_SYSTEM = `You are the Atelier AI assistant helping Lucas manage his design team at Every.to.
+
+You can:
+- Answer questions about team workload, deadlines, blockers
+- Suggest task assignments based on capacity
+- Triage new requests
+- Give status reports
+
+IMPORTANT RULES:
+- NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks by their TITLE only (e.g. "Cora Landing Page Redesign", "Annual Report Cover").
+- When Lucas asks to assign/move/change a task, output the action tag using the internal ID but it will be hidden from display:
+[ACTION:ASSIGN task_id=ATL-XXX assignee=daniel|benjamin]
+[ACTION:STATUS task_id=ATL-XXX status=triaged|in-progress|review|complete|blocked]
+- Keep responses concise (3-4 sentences). Be proactive — mention risks and suggestions.
+- Don't use emojis.
+- Use markdown for formatting: **bold** for emphasis, bullet lists with -`;
+
+function getManagerContext() {
+  let ctx = 'Current team state:\n\nTeam:\n';
+  for (const [id, m] of Object.entries(STATE.team)) {
+    ctx += `- ${m.name} (${m.role}): skills: ${m.skills.join(', ')}\n`;
+  }
+  ctx += '\nTasks:\n';
+  for (const t of Object.values(STATE.tasks)) {
+    ctx += `- ${t.id}: "${t.title}" | assignee: ${t.assignee || 'unassigned'} | type: ${t.type} | status: ${t.status} | progress: ${t.progress}% | due: ${t.due} | requester: ${t.requester} | priority: ${t.priority}`;
+    if (t.blocker) ctx += ` | BLOCKER: ${t.blocker}`;
+    ctx += '\n';
+  }
+  const danielInts = Object.values(STATE.tasks).filter(t => t.assignee === 'daniel' && t.type === 'interruption').length;
+  const benjInts = Object.values(STATE.tasks).filter(t => t.assignee === 'benjamin' && t.type === 'interruption').length;
+  ctx += `\nCapacity: Daniel ${danielInts}/2 interruption slots used. Benjamin ${benjInts}/2 interruption slots used.`;
+  ctx += `\nEach designer has 1 primary task slot + 2 interruption slots per week.`;
+  return ctx;
+}
+
+async function initManager() {
+  if(managerInitDone) return;
+  managerInitDone = true;
+  managerHistory = [];
+  const systemMsg = MANAGER_SYSTEM + '\n\n' + getManagerContext();
+  managerHistory.push({ role: 'user', content: 'I just opened the dashboard. Give me a quick status update on the team.' });
+  
+  // Show typing
+  const container = document.getElementById('managerMessages');
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+  
+  try {
+    const reply = await callClaude(systemMsg, managerHistory, 300);
+    typing.remove();
+    managerHistory.push({ role: 'assistant', content: reply });
+    _addMsg(container, reply, 'ai');
+  } catch(e) {
+    typing.remove();
+    _addMsg(container, 'Having trouble connecting. Try again.', 'ai');
+  }
+}
+
+function addMsg(containerId, html, type, delay = 0) {
+  const container = document.getElementById(containerId);
+  if(delay > 0) {
+    // Show typing indicator
+    const typing = document.createElement('div');
+    typing.className = 'typing-indicator';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    container.appendChild(typing);
+    container.scrollTop = container.scrollHeight;
+    
+    setTimeout(() => {
+      typing.remove();
+      _addMsg(container, html, type);
+    }, delay);
+  } else {
+    _addMsg(container, html, type);
+  }
+}
+
+function formatAiReply(text) {
+  // Strip ATL-XXX references
+  let html = text.replace(/ATL-\d{3}\s*[\(\[:]?\s*/g, '').replace(/[\)\]]\s*/g, ' ');
+  // Markdown bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Markdown italic
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Newlines to <br>
+  html = html.replace(/\n/g, '<br>');
+  // Make task titles clickable — match known task titles
+  for (const t of Object.values(STATE.tasks)) {
+    const escaped = t.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    html = html.replace(regex, `<span class="task-ref" onclick="openTaskModal('${t.id}')">${t.title}</span>`);
+  }
+  return html;
+}
+
+function _addMsg(container, html, type) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  const processed = (type === 'ai') ? formatAiReply(html) : html;
+  div.innerHTML = processed;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  lucide.createIcons();
+}
+
+async function managerSend(text) {
+  const input = document.getElementById('managerInput');
+  const msg = text || input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  
+  addMsg('managerMessages', msg, 'user');
+  clearHighlights();
+  
+  managerHistory.push({ role: 'user', content: msg });
+  
+  const container = document.getElementById('managerMessages');
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+  
+  try {
+    const systemMsg = MANAGER_SYSTEM + '\n\n' + getManagerContext();
+    const reply = await callClaude(systemMsg, managerHistory, 400);
+    typing.remove();
+    managerHistory.push({ role: 'assistant', content: reply });
+    
+    // Parse and execute [ACTION:...] tags
+    const actionRegex = /\[ACTION:(ASSIGN|STATUS)\s+(.+?)\]/g;
+    let match;
+    while ((match = actionRegex.exec(reply)) !== null) {
+      const actionType = match[1];
+      const params = match[2];
+      if (actionType === 'ASSIGN') {
+        const tidMatch = params.match(/task_id=(ATL-\d+)/);
+        const assMatch = params.match(/assignee=(\w+)/);
+        if (tidMatch && assMatch && STATE.tasks[tidMatch[1]]) {
+          const task = STATE.tasks[tidMatch[1]];
+          task.assignee = assMatch[1];
+          if (task.type === 'queue') { task.type = 'interruption'; task.slot = 1; }
+          if (task.status === 'queued') task.status = 'triaged';
+          saveState(); renderBoard();
+          setTimeout(() => highlightCard(tidMatch[1]), 300);
+        }
+      } else if (actionType === 'STATUS') {
+        const tidMatch = params.match(/task_id=(ATL-\d+)/);
+        const stMatch = params.match(/status=([\w-]+)/);
+        if (tidMatch && stMatch && STATE.tasks[tidMatch[1]]) {
+          const task = STATE.tasks[tidMatch[1]];
+          task.status = stMatch[1];
+          if (stMatch[1] === 'complete') { task.progress = 100; if (task.checklist) task.checklist.forEach(c => c.done = true); }
+          saveState(); renderBoard();
+          setTimeout(() => highlightCard(tidMatch[1]), 300);
+        }
+      }
+    }
+    
+    // Clean action tags from display and render
+    const cleanReply = reply.replace(/\[ACTION:.*?\]/g, '').trim();
+    _addMsg(container, cleanReply, 'ai');
+  } catch(e) {
+    typing.remove();
+    managerHistory.pop(); // remove failed user message
+    _addMsg(container, 'Having trouble connecting. Try again.', 'ai');
+  }
+}
+
+function highlightCard(taskId) {
+  const card = document.querySelector(`[data-task-id="${taskId}"]`);
+  if(card) {
+    card.classList.add('glow');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => card.classList.remove('glow'), 4000);
+  }
+}
+function clearHighlights() {
+  document.querySelectorAll('.task-card.glow').forEach(c => c.classList.remove('glow'));
+}
+
+// ===== BOARD RENDERING =====
+function renderBoard() {
+  const panel = document.getElementById('boardPanel');
+  const tasks = STATE.tasks;
+  
+  const danielPrimary = Object.values(tasks).find(t => t.assignee === 'daniel' && t.type === 'primary');
+  const benjPrimary = Object.values(tasks).find(t => t.assignee === 'benjamin' && t.type === 'primary');
+  const danielInts = Object.values(tasks).filter(t => t.assignee === 'daniel' && t.type === 'interruption');
+  const benjInts = Object.values(tasks).filter(t => t.assignee === 'benjamin' && t.type === 'interruption');
+  const queue = Object.values(tasks).filter(t => t.type === 'queue');
+  
+  panel.innerHTML = `
+    <div class="board-section">
+      <div class="board-section-title"><i data-lucide="target" class="icon"></i> In Focus</div>
+      ${renderCard(danielPrimary, true)}
+      ${renderCard(benjPrimary, true)}
+    </div>
+    <div class="board-section">
+      <div class="board-section-title"><i data-lucide="pin" class="icon"></i> This Week's Interruptions</div>
+      <div style="margin-bottom:8px;font-size:11px;color:var(--text-dim)">Daniel (${danielInts.length}/2 slots)</div>
+      <div class="slot-row">
+        ${danielInts[0] ? renderSlot(danielInts[0], 1) : renderEmptySlot('Daniel', 1)}
+        ${danielInts[1] ? renderSlot(danielInts[1], 2) : renderEmptySlot('Daniel', 2)}
+      </div>
+      <div style="margin:12px 0 8px;font-size:11px;color:var(--text-dim)">Benjamin (${benjInts.length}/2 slots)</div>
+      <div class="slot-row">
+        ${benjInts[0] ? renderSlot(benjInts[0], 1) : renderEmptySlot('Benjamin', 1)}
+        ${benjInts[1] ? renderSlot(benjInts[1], 2) : renderEmptySlot('Benjamin', 2)}
+      </div>
+    </div>
+    <div class="board-section">
+      <div class="board-section-title"><i data-lucide="inbox" class="icon"></i> Queue (${queue.length})</div>
+      ${queue.map(t => renderCard(t, false)).join('')}
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function renderCard(task, showAssignee) {
+  if(!task) return '';
+  const statusClass = task.status === 'in-progress' ? 'status-in-progress' :
+    task.status === 'review' ? 'status-review' :
+    task.status === 'blocked' ? 'status-blocked' :
+    task.status === 'triaged' ? 'status-triaged' : 'status-queued';
+  const statusLabel = task.status === 'in-progress' ? 'In Progress' :
+    task.status === 'review' ? 'In Review' :
+    task.status === 'blocked' ? 'Blocked' :
+    task.status === 'triaged' ? 'Triaged' : 'Queued';
+  
+  return `
+    <div class="task-card priority-${task.priority} ${task.status === 'blocked' ? 'blocked' : ''}" data-task-id="${task.id}" onclick="openTaskModal('${task.id}')">
+      ${task.status === 'blocked' ? '<i data-lucide="alert-circle" class="icon blocked-icon" style="color:var(--red)"></i>' : ''}
+      ${showAssignee ? `<div class="card-assignee">${task.assignee === 'daniel' ? 'Daniel' : task.assignee === 'benjamin' ? 'Benjamin' : 'Unassigned'}</div>` : ''}
+      <div class="card-title">${task.title}</div>
+      <div class="card-meta">
+        <span class="card-status ${statusClass}">${statusLabel}</span>
+        <span>${task.due}</span>
+        <span>${task.requester}</span>
+      </div>
+      ${task.progress > 0 ? `<div class="card-progress"><div class="card-progress-bar" style="width:${task.progress}%"></div></div>` : ''}
+    </div>
+  `;
+}
+
+function renderSlot(task, num) {
+  const statusClass = task.status === 'review' ? 'status-review' : task.status === 'blocked' ? 'status-blocked' : 'status-triaged';
+  const statusLabel = task.status === 'review' ? 'In Review' : task.status === 'blocked' ? 'Blocked' : 'Triaged';
+  return `
+    <div class="slot-card filled ${task.status === 'blocked' ? 'blocked' : ''}" data-task-id="${task.id}" onclick="openTaskModal('${task.id}')" style="cursor:pointer">
+      <div class="slot-label">Interruption ${num}</div>
+      <div class="card-title" style="font-size:13px">${task.title}</div>
+      <div class="card-meta" style="margin-top:4px">
+        <span class="card-status ${statusClass}">${statusLabel}</span>
+        <span>${task.due}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderEmptySlot(name, num) {
+  return `<div class="slot-card">Slot ${num} — Available</div>`;
+}
+
+// ===== DESIGNER VIEW =====
+function switchDesigner(id) {
+  STATE.currentDesigner = id;
+  document.querySelectorAll('.designer-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.designer-btn').forEach(b => {
+    if(b.textContent.toLowerCase() === id) b.classList.add('active');
+  });
+  renderDesigner();
+  // Reset chat
+  document.getElementById('designerMessages').innerHTML = '';
+  designerChatHistory = [];
+  initDesignerChat();
+}
+
+function renderDesigner() {
+  const id = STATE.currentDesigner;
+  const tasks = STATE.tasks;
+  const primary = Object.values(tasks).find(t => t.assignee === id && t.type === 'primary');
+  const ints = Object.values(tasks).filter(t => t.assignee === id && t.type === 'interruption');
+  const content = document.getElementById('designerContent');
+  const name = STATE.team[id].name;
+  
+  if(!primary) {
+    content.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text-dim)"><h2 class="heading" style="color:var(--text);margin-bottom:8px">No primary task</h2>Check with Lucas for your next assignment.</div>`;
+    return;
+  }
+  
+  content.innerHTML = `
+    <div class="primary-zone" onclick="openTaskModal('${primary.id}')">
+      <div class="zone-label"><i data-lucide="target" class="icon"></i> Primary Focus</div>
+      <div class="task-title">${primary.title}</div>
+      <div class="task-brief">${primary.brief}</div>
+      <div class="task-details">
+        <div class="detail-item"><span class="label">Status</span><span class="value" style="color:${primary.status === 'blocked' ? 'var(--red)' : primary.status === 'in-progress' ? 'var(--green)' : 'var(--gold)'}">${primary.status === 'in-progress' ? 'In Progress' : primary.status === 'blocked' ? 'Blocked' : 'Triaged'}</span></div>
+        <div class="detail-item"><span class="label">Due</span><span class="value">${primary.due}</span></div>
+        <div class="detail-item"><span class="label">Progress</span><span class="value">${primary.progress}%</span></div>
+        <div class="detail-item"><span class="label">Requester</span><span class="value">${primary.requester}</span></div>
+      </div>
+      
+      ${primary.conversationHistory && primary.conversationHistory.length ? `
+        <a href="#" class="view-request-toggle" onclick="event.preventDefault();event.stopPropagation();toggleRequestHistory('${primary.id}')">
+          View request conversation →
+        </a>
+        <div id="requestHistory-${primary.id}" class="request-history">
+          <div class="history-title">Original Request Conversation</div>
+          ${primary.conversationHistory.map(msg => `
+            <div class="history-msg">
+              <div class="msg-author">${msg.role === 'user' ? primary.requester : 'Atelier'}:</div>
+              <div class="msg-content">${msg.content}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      ${primary.checklist.length ? `
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;font-weight:500">CHECKLIST (${primary.checklist.filter(c=>c.done).length}/${primary.checklist.length})</div>
+        <ul class="checklist">
+          ${primary.checklist.map((item, i) => `
+            <li class="${item.done ? 'done' : ''}" onclick="event.stopPropagation();toggleCheck('${primary.id}', ${i})">
+              <div class="check-box"></div>
+              ${item.text}
+            </li>
+          `).join('')}
+        </ul>
+      ` : ''}
+      
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;font-weight:500;text-transform:uppercase;letter-spacing:1px">Attachments</div>
+        <div class="attachments-section">
+          ${renderAttachmentListReadOnly(primary)}
+          <a href="#" class="manage-attachments-link" onclick="event.preventDefault();event.stopPropagation();openTaskModal('${primary.id}')">
+            Manage attachments
+          </a>
+        </div>
+      </div>
+      
+      <div class="action-buttons" onclick="event.stopPropagation()">
+        <button class="action-btn primary" onclick="markComplete('${primary.id}')"><i data-lucide="check" class="icon icon-sm"></i> Mark Complete</button>
+        <button class="action-btn danger" onclick="flagBlocked('${primary.id}')"><i data-lucide="alert-circle" class="icon"></i> I'm Blocked</button>
+        <button class="action-btn secondary" onclick="needInfo('${primary.id}')"><i data-lucide="help-circle" class="icon icon-sm"></i> Need More Info</button>
+      </div>
+    </div>
+    
+    <div class="interruption-zone">
+      <div class="zone-label">
+        <i data-lucide="pin" class="icon"></i> Interruptions
+        <span class="interruption-counter">${ints.length}/2 used</span>
+      </div>
+      <div class="slot-row">
+        ${ints[0] ? renderDesignerInt(ints[0], 1) : `<div class="slot-card">Slot 1 — Available</div>`}
+        ${ints[1] ? renderDesignerInt(ints[1], 2) : `<div class="slot-card">Slot 2 — Available</div>`}
+      </div>
+      ${ints.length >= 2 ? '<div class="interruption-full"><i data-lucide="alert-triangle" class="icon"></i> Interruptions full this week. Any new requests will wait until next week.</div>' : ''}
+    </div>
+  `;
+  
+  if(document.getElementById('designerMessages').children.length === 0) initDesignerChat();
+  lucide.createIcons();
+}
+
+function renderDesignerInt(task, num) {
+  return `
+    <div class="slot-card filled" onclick="openTaskModal('${task.id}')" style="cursor:pointer">
+      <div class="slot-label">Interruption ${num}</div>
+      <div class="card-title" style="font-size:13px;margin-bottom:4px">${task.title}</div>
+      <div class="card-meta">
+        <span class="card-status ${task.status === 'review' ? 'status-review' : task.status === 'blocked' ? 'status-blocked' : 'status-triaged'}">${task.status === 'review' ? 'In Review' : task.status === 'blocked' ? 'Blocked' : 'Active'}</span>
+        <span>${task.due}</span>
+      </div>
+      ${task.status === 'blocked' ? `<div style="font-size:11px;color:var(--red);margin-top:6px"><i data-lucide="alert-circle" class="icon"></i> ${task.blocker}</div>` : ''}
+      ${task.conversationHistory && task.conversationHistory.length ? `
+        <a href="#" class="view-request-toggle" onclick="event.preventDefault();event.stopPropagation();toggleRequestHistory('${task.id}')" style="margin-top:8px;font-size:11px">
+          View request →
+        </a>
+        <div id="requestHistory-${task.id}" class="request-history" style="margin-top:8px">
+          <div class="history-title">Original Request</div>
+          ${task.conversationHistory.map(msg => `
+            <div class="history-msg" style="margin-bottom:8px">
+              <div class="msg-author" style="font-size:10px">${msg.role === 'user' ? task.requester : 'Atelier'}:</div>
+              <div class="msg-content" style="font-size:11px">${msg.content}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function toggleRequestHistory(taskId) {
+  const el = document.getElementById('requestHistory-' + taskId);
+  if (el) el.classList.toggle('expanded');
+}
+
+function renderAttachmentListReadOnly(task) {
+  const atts = task.attachments || [];
+  if (!atts.length) return '<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:8px">No attachments</div>';
+  return atts.map(a => `
+    <div class="attachment-row">
+      <span class="att-icon"><i data-lucide="${a.type === 'file' ? 'paperclip' : 'external-link'}" class="icon icon-sm"></i></span>
+      <span class="att-name"><a href="${a.url}" target="_blank">${a.name}</a></span>
+      <span class="att-meta">${a.addedBy}</span>
+    </div>
+  `).join('');
+}
+
+function toggleCheck(taskId, index) {
+  const task = STATE.tasks[taskId];
+  task.checklist[index].done = !task.checklist[index].done;
+  const done = task.checklist.filter(c => c.done).length;
+  task.progress = Math.round(done / task.checklist.length * 100);
+  saveState();
+  renderDesigner();
+  renderBoard();
+}
+
+function markComplete(taskId) {
+  addMsg('designerMessages', 'Mark as complete', 'user');
+  addMsg('designerMessages', `Great work! I've marked <strong>${STATE.tasks[taskId].title}</strong> as complete. Lucas and the requester have been notified. \n\nReady for your next task — check with Lucas or I can pull something from the queue.`, 'ai', 500);
+  toggleChatWidget(true);
+}
+
+function flagBlocked(taskId) {
+  addMsg('designerMessages', "I'm blocked", 'user');
+  addMsg('designerMessages', `Oh no — what's blocking you on <strong>${STATE.tasks[taskId].title}</strong>? Describe the blocker and I'll notify Lucas and the requester.`, 'ai', 400);
+  toggleChatWidget(true);
+}
+
+function needInfo(taskId) {
+  addMsg('designerMessages', 'I need more info', 'user');
+  addMsg('designerMessages', `What information do you need for <strong>${STATE.tasks[taskId].title}</strong>? I'll reach out to ${STATE.tasks[taskId].requester} on your behalf.`, 'ai', 400);
+  toggleChatWidget(true);
+}
+
+// ===== DESIGNER CHAT WIDGET =====
+function toggleChatWidget(forceOpen) {
+  const widget = document.getElementById('designerChatWidget');
+  if(forceOpen) { widget.classList.add('open'); }
+  else { widget.classList.toggle('open'); }
+}
+
+function initDesignerChat() {
+  const id = STATE.currentDesigner;
+  const name = STATE.team[id].name;
+  const primary = Object.values(STATE.tasks).find(t => t.assignee === id && t.type === 'primary');
+  const ints = Object.values(STATE.tasks).filter(t => t.assignee === id && t.type === 'interruption');
+  
+  if(!primary) return;
+  
+  const checkedCount = primary.checklist.filter(c => c.done).length;
+  const totalCount = primary.checklist.length;
+  const remaining = totalCount - checkedCount;
+  
+  let msg = '';
+  if(id === 'daniel') {
+    msg = `Hey Daniel! Your focus today: <strong>${primary.title}</strong>.\n\nYou're ${primary.progress}% through — ${checkedCount}/${totalCount} checklist items done. ${remaining} to go.\n\nAt yesterday's pace (2 items/day), you'll finish <strong>Thursday</strong> — one day before the Friday deadline. Looking good! \n\n`;
+    if(ints.length > 0 && ints[0].status === 'review') {
+      msg += `Quick heads up: <strong>${ints[0].title}</strong> is in review — due tomorrow. Make sure to finalize it today.`;
+    }
+  } else {
+    msg = `Hey Benjamin! Your primary this week: <strong>${primary.title}</strong>.\n\nYou haven't started yet — 0/${totalCount} items. Due Mar 5, so you have time, but don't wait too long to get the mood board going.\n\n`;
+    const blocked = ints.find(t => t.status === 'blocked');
+    if(blocked) {
+      msg += `<i data-lucide="alert-triangle" class="icon"></i> Your interruption <strong>${blocked.title}</strong> is still blocked — waiting on copy from editorial. I flagged this 2 hours ago. I'll ping them again if we don't hear back by end of day.`;
+    }
+  }
+  
+  addMsg('designerMessages', msg, 'ai', 600);
+}
+
+let designerChatHistory = [];
+
+function getDesignerSystemPrompt() {
+  const id = STATE.currentDesigner;
+  const designer = STATE.team[id];
+  const primary = Object.values(STATE.tasks).find(t => t.assignee === id && t.type === 'primary');
+  const ints = Object.values(STATE.tasks).filter(t => t.assignee === id && t.type === 'interruption');
+
+  let sys = `You are the Atelier AI coach for a designer at Every.to's creative team. You help them stay focused, unblocked, and productive.
+
+Current designer: ${designer.name}
+Their current tasks:`;
+
+  if (primary) {
+    const checkedCount = primary.checklist ? primary.checklist.filter(c => c.done).length : 0;
+    const totalCount = primary.checklist ? primary.checklist.length : 0;
+    sys += `\n- Primary: ${primary.title} (${primary.status}, ${primary.progress}% done, due ${primary.due})`;
+    sys += `\n  Brief: ${primary.brief}`;
+    if (primary.checklist && primary.checklist.length) {
+      sys += `\n  Checklist:`;
+      primary.checklist.forEach(c => { sys += `\n    - [${c.done ? 'x' : ' '}] ${c.text}`; });
+    }
+    if (primary.conversationHistory && primary.conversationHistory.length) {
+      sys += `\n\n  Original request conversation:`;
+      primary.conversationHistory.forEach(m => {
+        sys += `\n  ${m.role === 'user' ? 'Requester' : 'Atelier'}: ${m.content}`;
+      });
+    }
+  }
+
+  if (ints.length) {
+    sys += `\n- Interruptions:`;
+    ints.forEach(t => {
+      sys += `\n  - ${t.title} (${t.status}${t.blocker ? ', BLOCKED: ' + t.blocker : ''}, due ${t.due})`;
+      if (t.conversationHistory && t.conversationHistory.length) {
+        sys += `\n    Original request conversation:`;
+        t.conversationHistory.forEach(m => {
+          sys += `\n    ${m.role === 'user' ? 'Requester' : 'Atelier'}: ${m.content}`;
+        });
+      }
+    });
+  }
+
+  sys += `\n\nYou can help them:
+- Understand task requirements and context
+- Break down work into steps
+- Draft responses to requesters
+- Flag blockers to the manager
+- Parse through request details and extract key information
+
+The original requester conversation is attached to each task when available -- use it to provide full context about what was requested and why.
+
+Keep responses concise (2-3 sentences). Be encouraging but practical. Don't use emojis.
+You are informational only. You cannot modify tasks or statuses. If the designer wants to change something, tell them to use the UI buttons or ask Lucas (the manager).
+NEVER show internal task IDs (like ATL-001). Always refer to tasks by their title only.
+Use markdown for formatting: **bold** for emphasis.`;
+
+  return sys;
+}
+
+async function designerSend() {
+  const input = document.getElementById('designerInput');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  addMsg('designerMessages', msg, 'user');
+
+  designerChatHistory.push({ role: 'user', content: msg });
+
+  const container = document.getElementById('designerMessages');
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const reply = await callClaude(getDesignerSystemPrompt(), designerChatHistory, 300);
+    typing.remove();
+    designerChatHistory.push({ role: 'assistant', content: reply });
+
+    _addMsg(container, reply, 'ai');
+  } catch(e) {
+    typing.remove();
+    designerChatHistory.pop();
+    _addMsg(container, 'Having trouble connecting. Try again.', 'ai');
+  }
+}
+
+// ===== REQUESTER VIEW =====
+let requesterHistory = [];
+let requesterPerson = null;
+let requesterDraft = {};
+
+function openRequestDrawer() {
+  const drawer = document.getElementById('requestDrawer');
+  drawer.classList.add('open');
+  
+  // Initialize chat if empty
+  if (document.getElementById('requesterMessages').children.length === 0) {
+    initRequesterChat();
+  }
+}
+
+function closeRequestDrawer() {
+  const drawer = document.getElementById('requestDrawer');
+  drawer.classList.remove('open');
+}
+
+function initRequesterChat() {
+  requesterHistory = [];
+  requesterPerson = null;
+  // Send initial greeting via API
+  requesterHistory.push({ role: 'user', content: 'Hi!' });
+  
+  const container = document.getElementById('requesterMessages');
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+  
+  callClaude(getRequesterSystemPrompt(), requesterHistory, 256).then(reply => {
+    typing.remove();
+    requesterHistory.push({ role: 'assistant', content: reply });
+    _addMsg(container, reply, 'ai');
+  }).catch(() => {
+    typing.remove();
+    _addMsg(container, 'Having trouble connecting. Try again.', 'ai');
+  });
+}
+
+// People memory — persists in localStorage
+function getKnownPeople() {
+  try { return JSON.parse(localStorage.getItem('atelier_people') || '{}'); } catch(e) { return {}; }
+}
+function savePerson(name, data) {
+  const people = getKnownPeople();
+  people[name.toLowerCase()] = { ...people[name.toLowerCase()], ...data, name: name, lastSeen: new Date().toISOString() };
+  localStorage.setItem('atelier_people', JSON.stringify(people));
+}
+
+function getRequesterSystemPrompt() {
+  let sys = `You are the design team's intake assistant at Every.to (a media/product studio). You help people submit design requests.
+
+Your job:
+1. First, ask their name if you don't know it
+2. Then understand what they need in 5-6 questions MAX:
+   - What do they need? (banner, logo, presentation, social assets, etc.)
+   - What's it for? (which product/campaign/initiative)
+   - Format/dimensions needed
+   - Deadline
+   - Do they have copy ready? (THIS IS CRITICAL — 80% copy readiness required)
+3. If they don't have copy ready, politely but firmly tell them to come back when they do. Save as draft.
+4. If they do, collect it and create the request.
+
+After collecting all info, output a summary in this exact format:
+  [REQUEST_COMPLETE]
+  Title: {short title}
+  Purpose: {what it's for}
+  Format: {dimensions/format}
+  Deadline: {when}
+  Copy: {ready/not ready}
+  Requester: {person's name}
+  Department: {if known}
+  Checklist: {AI-generated 1-5 checklist items based on the conversation, separated by " | "}
+
+Generate the checklist based on what the requester described. For example:
+- For a landing page: "Create wireframes | Design hero section | Build responsive layout | Test on mobile"
+- For social media kit: "Create mood board | Design Instagram templates | Design Twitter assets | Create story templates"  
+- For presentation: "Gather content outline | Design slide templates | Create graphics | Review with stakeholder"
+
+Rules:
+- Be warm, friendly, conversational — like a helpful coworker, not a form
+- Ask ONE question at a time, never multiple
+- Keep responses short (2-3 sentences max)
+- Don't use emojis
+
+The design team has 2 designers: Daniel (senior — brand, web, product) and Benjamin (junior — social, marketing, illustration).
+Each designer has 1 primary task slot + 2 interruption slots per week.
+
+If someone asks about an existing request, check if their name matches any tasks and give them a status update.
+NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks by their title only.`;
+
+  // Inject known people context
+  const people = getKnownPeople();
+  if (Object.keys(people).length > 0) {
+    sys += '\n\nKnown people (from previous visits):';
+    for (const [key, p] of Object.entries(people)) {
+      sys += `\n- ${p.name}${p.department ? ' (' + p.department + ')' : ''}${p.lastRequest ? ', last request: ' + p.lastRequest : ''}`;
+    }
+  }
+
+  // Inject existing tasks for status lookups
+  const activeTasks = Object.values(STATE.tasks).filter(t => t.status !== 'complete');
+  if (activeTasks.length > 0) {
+    sys += '\n\nCurrent tasks in the system:';
+    for (const t of activeTasks) {
+      sys += `\n- ${t.id}: "${t.title}" | requester: ${t.requester} | status: ${t.status} | assignee: ${t.assignee || 'unassigned'} | due: ${t.due}`;
+      if (t.blocker) sys += ` | BLOCKED: ${t.blocker}`;
+    }
+  }
+
+  return sys;
+}
+
+async function requesterSend() {
+  const input = document.getElementById('requesterInput');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  addMsg('requesterMessages', msg, 'user');
+  
+  requesterHistory.push({ role: 'user', content: msg });
+  
+  const container = document.getElementById('requesterMessages');
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+  
+  try {
+    const reply = await callClaude(getRequesterSystemPrompt(), requesterHistory, 256);
+    typing.remove();
+    requesterHistory.push({ role: 'assistant', content: reply });
+    
+    // Parse [REQUEST_COMPLETE] if present
+    if (reply.includes('[REQUEST_COMPLETE]')) {
+      const lines = reply.split('\n');
+      const data = {};
+      for (const line of lines) {
+        const m = line.match(/^\s*(Title|Purpose|Format|Deadline|Copy|Requester|Department|Checklist):\s*(.+)/i);
+        if (m) data[m[1].toLowerCase()] = m[2].trim();
+      }
+      
+      if (data.title) {
+        // Save person
+        if (data.requester) {
+          requesterPerson = data.requester;
+          savePerson(data.requester, { department: data.department || '' });
+        }
+        
+        // Parse checklist items
+        let checklist = [];
+        if (data.checklist) {
+          checklist = data.checklist.split('|').map(item => ({
+            text: item.trim(),
+            done: false
+          })).filter(item => item.text.length > 0);
+        }
+        
+        // Create task
+        const taskNum = Object.keys(STATE.tasks).length + 1;
+        const taskId = 'ATL-' + String(taskNum).padStart(3, '0');
+        STATE.tasks[taskId] = {
+          id: taskId, title: data.title, assignee: null, type: 'queue',
+          status: 'queued', progress: 0, due: data.deadline || 'TBD',
+          requester: data.requester || 'Unknown', requestedBy: data.requester || 'Unknown',
+          brief: `${data.purpose || ''}. Format: ${data.format || 'TBD'}.`,
+          priority: 'medium', checklist: checklist, attachments: [],
+          conversationHistory: [...requesterHistory]
+        };
+        saveState();
+        renderBoard();
+        renderRequesterQueue();
+      }
+      
+      // Show a clean version (remove the raw tag block, show summary card)
+      const cleanReply = reply.replace(/\[REQUEST_COMPLETE\][\s\S]*$/, '').trim();
+      let displayMsg = cleanReply || 'Your request has been submitted.';
+      if (data.title) {
+        const queuePos = Object.values(STATE.tasks).filter(t => t.type === 'queue').length;
+        displayMsg += `\n\n<div class="summary-card">`;
+        displayMsg += `<div class="sc-title">${data.title}</div>`;
+        if (data.purpose) displayMsg += `<div class="sc-row"><span><i data-lucide="clipboard" class="icon icon-sm"></i></span> ${data.purpose}</div>`;
+        if (data.format) displayMsg += `<div class="sc-row"><span><i data-lucide="ruler" class="icon icon-sm"></i></span> ${data.format}</div>`;
+        if (data.deadline) displayMsg += `<div class="sc-row"><span><i data-lucide="calendar" class="icon icon-sm"></i></span> ${data.deadline}</div>`;
+        displayMsg += `<div class="sc-row"><span><i data-lucide="pen-tool" class="icon icon-sm"></i></span> Copy: ${data.copy || 'unknown'}</div>`;
+        displayMsg += `</div>\n\nYou're <strong>#${queuePos}</strong> in the queue.`;
+      }
+      _addMsg(container, displayMsg, 'ai');
+    } else {
+      // Try to detect person name from early conversation for memory
+      if (!requesterPerson && requesterHistory.length <= 6) {
+        // Simple heuristic: if user gave a short response (likely a name) early on
+        const userMsgs = requesterHistory.filter(m => m.role === 'user');
+        if (userMsgs.length === 2 && userMsgs[1].content.split(' ').length <= 3) {
+          const name = userMsgs[1].content.replace(/^(i'm |my name is |it's |hey,? i'm )/i, '').replace(/[.!]$/,'').trim();
+          if (name.length > 1 && name.length < 30) {
+            requesterPerson = name;
+            savePerson(name, {});
+          }
+        }
+      }
+      _addMsg(container, reply, 'ai');
+    }
+  } catch(e) {
+    typing.remove();
+    requesterHistory.pop();
+    _addMsg(container, 'Having trouble connecting. Try again.', 'ai');
+  }
+}
+
+// ===== REQUESTER QUEUE VIEW =====
+function renderRequesterQueue() {
+  const container = document.getElementById('requesterQueueView');
+  const tasks = Object.values(STATE.tasks);
+
+  // Pipeline counts
+  const counts = {
+    'in-progress': tasks.filter(t => t.status === 'in-progress').length,
+    'review': tasks.filter(t => t.status === 'review').length,  
+    'blocked': tasks.filter(t => t.status === 'blocked').length,
+    'triaged': tasks.filter(t => t.status === 'triaged').length,
+    'queued': tasks.filter(t => t.status === 'queued').length,
+    'complete': tasks.filter(t => t.status === 'complete').length
+  };
+
+  // Group tasks by status
+  const groups = {
+    'In Progress': tasks.filter(t => t.status === 'in-progress'),
+    'In Review': tasks.filter(t => t.status === 'review'),
+    'Blocked': tasks.filter(t => t.status === 'blocked'),
+    'Waiting': tasks.filter(t => t.status === 'triaged' || t.status === 'queued'),
+    'Completed': tasks.filter(t => t.status === 'complete')
+  };
+
+  const statusColor = (s) => {
+    if (s === 'in-progress') return 'var(--green)';
+    if (s === 'review') return 'var(--purple)';
+    if (s === 'blocked') return 'var(--red)';
+    if (s === 'triaged' || s === 'queued') return 'var(--gold)';
+    if (s === 'complete') return 'var(--text-tertiary)';
+    return 'var(--text-tertiary)';
+  };
+
+  const statusLabel = (s) => {
+    if (s === 'in-progress') return 'In Progress';
+    if (s === 'review') return 'In Review';
+    if (s === 'blocked') return 'Blocked';
+    if (s === 'triaged') return 'Triaged';
+    if (s === 'queued') return 'Queued';
+    if (s === 'complete') return 'Complete';
+    return s;
+  };
+
+  let html = `
+    <div class="pipeline-overview">
+      <div class="pipeline-stage"><i data-lucide="play-circle" class="icon stage-icon"></i><div class="stage-count">${counts['in-progress']}</div><div class="stage-label">In Progress</div></div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-stage"><i data-lucide="eye" class="icon stage-icon"></i><div class="stage-count">${counts.review}</div><div class="stage-label">Review</div></div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-stage"><i data-lucide="alert-circle" class="icon stage-icon"></i><div class="stage-count">${counts.blocked}</div><div class="stage-label">Blocked</div></div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-stage"><i data-lucide="clock" class="icon stage-icon"></i><div class="stage-count">${counts.triaged + counts.queued}</div><div class="stage-label">Waiting</div></div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-stage"><i data-lucide="check-circle" class="icon stage-icon"></i><div class="stage-count">${counts.complete}</div><div class="stage-label">Complete</div></div>
+    </div>
+  `;
+
+  for (const [groupName, groupTasks] of Object.entries(groups)) {
+    if (groupTasks.length === 0) continue;
+    
+    html += `
+      <div class="queue-group">
+        <div class="queue-group-title">
+          ${groupName}
+          <span class="queue-count">${groupTasks.length}</span>
+        </div>
+        ${groupTasks.map(task => `
+          <div class="queue-card" onclick="openTaskModalReadOnly('${task.id}')">
+            <div class="queue-card-header">
+              <div class="queue-card-title">${task.title}</div>
+              <div class="queue-card-status" style="color: ${statusColor(task.status)}">${statusLabel(task.status)}</div>
+            </div>
+            <div class="queue-card-meta">
+              <span class="queue-card-assignee">${task.assignee ? STATE.team[task.assignee]?.name || task.assignee : 'Unassigned'}</span>
+              <span>Requested by ${task.requester}</span>
+              <span>Due ${task.due}</span>
+            </div>
+            ${task.progress > 0 ? `
+              <div class="queue-card-progress">
+                <div class="queue-card-progress-bar" style="width: ${task.progress}%"></div>
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+  lucide.createIcons();
+}
+
+// ===== TASK MODAL =====
+function openTaskModal(taskId) {
+  openTaskModalInternal(taskId, false);
+}
+
+function openTaskModalReadOnly(taskId) {
+  openTaskModalInternal(taskId, true);
+}
+
+function openTaskModalInternal(taskId, readOnly) {
+  const task = STATE.tasks[taskId];
+  if (!task) return;
+  const overlay = document.getElementById('taskModal');
+  const box = document.getElementById('taskModalContent');
+
+  const statusColor = task.status === 'in-progress' ? 'var(--green)' :
+    task.status === 'review' ? 'var(--purple)' :
+    task.status === 'blocked' ? 'var(--red)' :
+    task.status === 'triaged' ? 'var(--gold)' : 'var(--text-tertiary)';
+  const statusLabel = task.status === 'in-progress' ? 'In Progress' :
+    task.status === 'review' ? 'In Review' :
+    task.status === 'blocked' ? 'Blocked' :
+    task.status === 'triaged' ? 'Triaged' : 'Queued';
+  const assigneeName = task.assignee ? STATE.team[task.assignee]?.name || task.assignee : 'Unassigned';
+
+  // Generate activity based on task state
+  const activities = [];
+  if (task.status === 'blocked' && task.blocker) activities.push({ time: '2h ago', text: `${assigneeName} flagged as blocked` });
+  const doneCount = (task.checklist || []).filter(c => c.done).length;
+  if (doneCount > 0) activities.push({ time: 'Yesterday', text: `${assigneeName} completed ${doneCount} item${doneCount > 1 ? 's' : ''}` });
+  if (task.status === 'review') activities.push({ time: 'Today', text: `${assigneeName} moved to review` });
+  if (!activities.length) activities.push({ time: 'Recently', text: 'Task created and added to board' });
+
+  const allStatuses = ['triaged', 'in-progress', 'review', 'complete'];
+
+  box.innerHTML = `
+    <button class="modal-close" onclick="closeTaskModal()">✕</button>
+    <div class="modal-title">${task.title}</div>
+    <div class="modal-status-line">
+      <span class="ms-status" style="color:${statusColor}">${statusLabel}</span>
+      <span class="ms-assignee">${assigneeName}</span>
+    </div>
+    <div class="modal-brief">${task.brief || ''}</div>
+    <div class="modal-details">
+      <div class="md-item"><div class="md-label">Due Date</div><div class="md-value">${task.due}</div></div>
+      <div class="md-item"><div class="md-label">Requester</div><div class="md-value">${task.requester}</div></div>
+      <div class="md-item"><div class="md-label">Priority</div><div class="md-value" style="text-transform:capitalize">${task.priority}</div></div>
+      <div class="md-item">
+        <div class="md-label">Progress</div>
+        <div class="md-value">${task.progress}%</div>
+        <div class="modal-progress-bar"><div class="bar-fill" style="width:${task.progress}%"></div></div>
+      </div>
+    </div>
+    ${task.checklist && task.checklist.length ? `
+      <div class="modal-section-label">Checklist (${doneCount}/${task.checklist.length})</div>
+      <ul class="modal-checklist">
+        ${task.checklist.map((item, i) => `
+          <li class="${item.done ? 'done' : ''}" ${readOnly ? '' : `onclick="modalToggleCheck('${taskId}',${i})"`}>
+            <div class="check-box" ${readOnly ? '' : `onclick="modalToggleCheck('${taskId}',${i})"`}></div>
+            <div class="checklist-text">${item.text}</div>
+            ${readOnly ? '' : `<button class="checklist-remove" onclick="event.stopPropagation();removeChecklistItem('${taskId}',${i})" title="Remove item">×</button>`}
+          </li>
+        `).join('')}
+      </ul>
+      ${readOnly ? '' : `
+        <div class="add-checklist-item">
+          <input type="text" id="newChecklistItem-${taskId}" placeholder="Add checklist item..." onkeydown="if(event.key==='Enter')addChecklistItem('${taskId}')">
+          <button onclick="addChecklistItem('${taskId}')">Add</button>
+        </div>
+      `}
+    ` : (!readOnly ? `
+      <div class="modal-section-label">Checklist</div>
+      <div class="add-checklist-item">
+        <input type="text" id="newChecklistItem-${taskId}" placeholder="Add checklist item..." onkeydown="if(event.key==='Enter')addChecklistItem('${taskId}')">
+        <button onclick="addChecklistItem('${taskId}')">Add</button>
+      </div>
+    ` : '')}
+    <div class="modal-section-label">Attachments</div>
+    <div class="attachments-section" id="modalAttachments-${taskId}">
+      ${renderAttachmentList(task)}
+      ${readOnly ? '' : `
+        <button class="add-attachment-btn" onclick="showAttachmentOptions('${taskId}','modal')"><i data-lucide="plus" class="icon icon-sm"></i> Add attachment</button>
+        <div id="attachmentOptions-${taskId}" style="display:none">
+          <div class="add-attachment-options">
+            <button onclick="triggerFileUpload('${taskId}','modal')"><i data-lucide="paperclip" class="icon icon-sm"></i> Upload file</button>
+            <button onclick="showLinkForm('${taskId}','modal')"><i data-lucide="external-link" class="icon icon-sm"></i> Add link</button>
+          </div>
+          <input type="file" id="fileInput-${taskId}" style="display:none" onchange="handleFileUpload('${taskId}',this,'modal')">
+          <div id="linkForm-${taskId}" style="display:none" class="add-link-form">
+            <input type="text" id="linkName-${taskId}" placeholder="Name">
+            <input type="text" id="linkUrl-${taskId}" placeholder="URL">
+            <button onclick="addLinkAttachment('${taskId}','modal')">Add</button>
+          </div>
+        </div>
+      `}
+    </div>
+    <div class="modal-section-label">Activity</div>
+    <div class="modal-activity">
+      ${activities.map(a => `<div class="act-item"><span class="act-time">${a.time}</span><span>${a.text}</span></div>`).join('')}
+    </div>
+    ${readOnly ? '' : `
+      <div class="modal-actions">
+        <select onchange="modalAssign('${taskId}',this.value)">
+          <option value="" ${!task.assignee ? 'selected' : ''}>Unassigned</option>
+          <option value="daniel" ${task.assignee === 'daniel' ? 'selected' : ''}>Daniel</option>
+          <option value="benjamin" ${task.assignee === 'benjamin' ? 'selected' : ''}>Benjamin</option>
+        </select>
+        ${allStatuses.map(s => {
+          const label = s === 'in-progress' ? 'In Progress' : s === 'review' ? 'Review' : s === 'triaged' ? 'Triage' : 'Complete';
+          const isActive = task.status === s;
+          return `<button class="status-btn ${isActive ? 'active-status' : ''}" onclick="modalSetStatus('${taskId}','${s}')">${label}</button>`;
+        }).join('')}
+      </div>
+    `}
+  `;
+
+  overlay.classList.add('visible');
+  requestAnimationFrame(() => { requestAnimationFrame(() => overlay.classList.add('show')); });
+  lucide.createIcons();
+}
+
+function closeTaskModal() {
+  const overlay = document.getElementById('taskModal');
+  overlay.classList.remove('show');
+  setTimeout(() => overlay.classList.remove('visible'), 200);
+}
+
+function modalToggleCheck(taskId, index) {
+  const task = STATE.tasks[taskId];
+  task.checklist[index].done = !task.checklist[index].done;
+  const done = task.checklist.filter(c => c.done).length;
+  task.progress = Math.round(done / task.checklist.length * 100);
+  saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
+}
+
+function addChecklistItem(taskId) {
+  const input = document.getElementById('newChecklistItem-' + taskId);
+  const text = input.value.trim();
+  if (!text) return;
+  
+  const task = STATE.tasks[taskId];
+  if (!task.checklist) task.checklist = [];
+  task.checklist.push({ text, done: false });
+  
+  // Recalculate progress
+  const done = task.checklist.filter(c => c.done).length;
+  task.progress = task.checklist.length > 0 ? Math.round(done / task.checklist.length * 100) : 0;
+  
+  input.value = '';
+  saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
+}
+
+function removeChecklistItem(taskId, index) {
+  const task = STATE.tasks[taskId];
+  task.checklist.splice(index, 1);
+  
+  // Recalculate progress
+  const done = task.checklist.filter(c => c.done).length;
+  task.progress = task.checklist.length > 0 ? Math.round(done / task.checklist.length * 100) : 0;
+  
+  saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
+}
+
+function modalAssign(taskId, value) {
+  const task = STATE.tasks[taskId];
+  task.assignee = value || null;
+  if (!value) { task.type = 'queue'; task.status = 'queued'; }
+  else if (task.type === 'queue') { task.type = 'interruption'; task.slot = 1; if (task.status === 'queued') task.status = 'triaged'; }
+  saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
+}
+
+function modalSetStatus(taskId, status) {
+  const task = STATE.tasks[taskId];
+  if (status === 'complete') {
+    task.status = 'complete'; task.progress = 100;
+    if (task.checklist) task.checklist.forEach(c => c.done = true);
+  } else {
+    task.status = status;
+  }
+  saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTaskModal(); });
+
+// ===== ATTACHMENTS =====
+function renderAttachmentList(task) {
+  const atts = task.attachments || [];
+  if (!atts.length) return '<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:8px">No attachments yet</div>';
+  return atts.map((a, i) => `
+    <div class="attachment-row">
+      <span class="att-icon"><i data-lucide="${a.type === 'file' ? 'paperclip' : 'external-link'}" class="icon icon-sm"></i></span>
+      <span class="att-name"><a href="${a.url}" target="_blank">${a.name}</a></span>
+      <span class="att-meta">${a.addedBy}</span>
+      <button class="att-remove" onclick="event.stopPropagation();removeAttachment('${task.id}',${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function showAttachmentOptions(taskId, context) {
+  const el = document.getElementById('attachmentOptions-' + taskId);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function triggerFileUpload(taskId, context) {
+  document.getElementById('fileInput-' + taskId).click();
+}
+
+function showLinkForm(taskId, context) {
+  const el = document.getElementById('linkForm-' + taskId);
+  if (el) { el.style.display = 'flex'; el.querySelector('input').focus(); }
+}
+
+function handleFileUpload(taskId, input, context) {
+  const file = input.files[0];
+  if (!file) return;
+  const task = STATE.tasks[taskId];
+  if (!task.attachments) task.attachments = [];
+  task.attachments.push({
+    type: 'file', name: file.name, url: '#', 
+    addedBy: context === 'designer' ? STATE.team[STATE.currentDesigner].name : 'You',
+    addedAt: new Date().toISOString().split('T')[0]
+  });
+  saveState();
+  if (context === 'modal') openTaskModal(taskId);
+  if (context === 'designer') renderDesigner();
+  input.value = '';
+}
+
+function addLinkAttachment(taskId, context) {
+  const nameEl = document.getElementById('linkName-' + taskId);
+  const urlEl = document.getElementById('linkUrl-' + taskId);
+  if (!nameEl.value.trim() || !urlEl.value.trim()) return;
+  const task = STATE.tasks[taskId];
+  if (!task.attachments) task.attachments = [];
+  task.attachments.push({
+    type: 'link', name: nameEl.value.trim(), url: urlEl.value.trim(),
+    addedBy: context === 'designer' ? STATE.team[STATE.currentDesigner].name : 'You',
+    addedAt: new Date().toISOString().split('T')[0]
+  });
+  saveState();
+  if (context === 'modal') openTaskModal(taskId);
+  if (context === 'designer') renderDesigner();
+  nameEl.value = '';
+  urlEl.value = '';
+}
+
+function removeAttachment(taskId, index) {
+  const task = STATE.tasks[taskId];
+  if (task.attachments) { 
+    task.attachments.splice(index, 1); 
+    saveState(); 
+    openTaskModal(taskId); 
+    renderDesigner(); 
+  }
+}
+
+// ===== INIT =====
+renderBoard();
+renderRequesterQueue();
+initManager();
+setTimeout(() => lucide.createIcons(), 100);
+</script>
+</body>
+</html>
