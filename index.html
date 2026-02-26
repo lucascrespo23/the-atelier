@@ -705,6 +705,138 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 }
 .add-link-form button:hover { opacity: 0.85; }
 
+/* ===== DELIGHT ANIMATIONS ===== */
+
+/* Card entrance — stagger in from below */
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.task-card, .queue-card, .slot-card.filled, .track-card {
+  animation: cardSlideIn 0.35s ease-out backwards;
+}
+.task-card:nth-child(1), .queue-card:nth-child(1) { animation-delay: 0.05s; }
+.task-card:nth-child(2), .queue-card:nth-child(2) { animation-delay: 0.1s; }
+.task-card:nth-child(3), .queue-card:nth-child(3) { animation-delay: 0.15s; }
+.task-card:nth-child(4), .queue-card:nth-child(4) { animation-delay: 0.2s; }
+.task-card:nth-child(5), .queue-card:nth-child(5) { animation-delay: 0.25s; }
+
+/* Checklist check — satisfying pop */
+@keyframes checkPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.checklist li.done .check-box,
+.modal-checklist li.done .check-box {
+  animation: checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Checklist strikethrough — slide in */
+.checklist li.done, .modal-checklist li.done {
+  transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+/* Chat send button — micro press */
+@keyframes sendPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+.chat-send:active { animation: sendPulse 0.15s ease-out; }
+
+/* Progress bars — animate width on load */
+@keyframes progressGrow {
+  from { width: 0; }
+}
+.card-progress-bar, .tc-progress-bar, .queue-card-progress-bar, .bar-fill {
+  animation: progressGrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: 0.3s;
+}
+
+/* Chat widget bubble — gentle breathe */
+@keyframes bubbleBreathe {
+  0%, 100% { box-shadow: 0 4px 12px rgba(196,112,75,0.25); }
+  50% { box-shadow: 0 4px 20px rgba(196,112,75,0.4); }
+}
+.chat-bubble { animation: bubbleBreathe 3s ease-in-out infinite; }
+.chat-bubble:hover { animation: none; transform: scale(1.08); }
+
+/* View transition — fade in */
+@keyframes viewFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.view.active { animation: viewFadeIn 0.25s ease-out; }
+
+/* Modal — smooth entrance */
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-overlay.show .modal-box {
+  animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Kanban column — stagger entrance */
+@keyframes colFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.kanban-column {
+  animation: colFadeIn 0.3s ease-out backwards;
+}
+.kanban-column:nth-child(1) { animation-delay: 0s; }
+.kanban-column:nth-child(2) { animation-delay: 0.06s; }
+.kanban-column:nth-child(3) { animation-delay: 0.12s; }
+.kanban-column:nth-child(4) { animation-delay: 0.18s; }
+.kanban-column:nth-child(5) { animation-delay: 0.24s; }
+
+/* Request drawer — slide + fade */
+.request-drawer {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+.request-drawer.open {
+  box-shadow: -8px 0 30px rgba(0,0,0,0.08);
+}
+
+/* Quick action pills — gentle hover lift */
+.quick-action {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.quick-action:hover {
+  transform: translateY(-1px);
+}
+.quick-action:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Primary zone — subtle entrance */
+@keyframes zoneReveal {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.primary-zone {
+  animation: zoneReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Attachment row — hover slide */
+.attachment-row {
+  transition: background 0.15s ease, padding-left 0.15s ease;
+}
+.attachment-row:hover {
+  padding-left: 12px;
+}
+
+/* New request button — subtle glow */
+@keyframes btnGlow {
+  0%, 100% { box-shadow: 0 2px 8px rgba(196,112,75,0.15); }
+  50% { box-shadow: 0 2px 16px rgba(196,112,75,0.3); }
+}
+.new-request-btn { animation: btnGlow 2.5s ease-in-out infinite; }
+.new-request-btn:hover { animation: none; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(196,112,75,0.3); }
+.new-request-btn:active { transform: translateY(0) scale(0.98); }
+
 .hidden { display: none !important; }
 
 /* ===== MOBILE ===== */
