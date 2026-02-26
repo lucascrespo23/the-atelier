@@ -1162,8 +1162,48 @@ function loadState() {
   try { const s = localStorage.getItem('atelier_state'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
 }
 function saveState() {
-  try { localStorage.setItem('atelier_state', JSON.stringify(STATE)); } catch(e) {} 
+  try { localStorage.setItem('atelier_state', JSON.stringify(STATE)); } catch(e) {}
+  // Debounced sync to Supabase
+  clearTimeout(saveState._timer);
+  saveState._timer = setTimeout(() => syncToSupabase(), 500);
 }
+
+// Sync all tasks to Supabase
+async function syncToSupabase() {
+  try {
+    const tasks = Object.values(STATE.tasks);
+    for (const task of tasks) {
+      await fetch('/api/db?action=upsert-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task)
+      });
+    }
+  } catch(e) { console.warn('Supabase sync failed:', e); }
+}
+
+// Load state from Supabase on startup
+async function loadFromSupabase() {
+  try {
+    const res = await fetch('/api/db?action=load');
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    if (data.tasks && Object.keys(data.tasks).length > 0) {
+      STATE.tasks = data.tasks;
+      STATE.team = data.team;
+      // Save to localStorage as cache
+      localStorage.setItem('atelier_state', JSON.stringify(STATE));
+      // Re-render everything
+      renderBoard();
+      if (document.getElementById('designerView').classList.contains('active')) renderDesigner();
+      if (document.getElementById('requesterView').classList.contains('active')) renderRequesterQueue();
+      console.log('Loaded from Supabase:', Object.keys(data.tasks).length, 'tasks');
+    }
+  } catch(e) { console.warn('Supabase load failed, using localStorage:', e); }
+}
+
+// Load from Supabase after initial render
+setTimeout(loadFromSupabase, 1000);
 
 // ===== DARK MODE =====
 function toggleDarkMode() {
