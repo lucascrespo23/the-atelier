@@ -765,7 +765,7 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
   <button class="chat-bubble" onclick="toggleChatWidget()">
     <i data-lucide="message-circle"></i>
   </button>
-  <div class="chat-widget" id="designerChatWidget">
+  <div class="chat-widget open" id="designerChatWidget">
     <div class="widget-header">
       <h3>Chat with Atelier</h3>
       <button class="widget-close" onclick="toggleChatWidget()">×</button>
@@ -800,6 +800,8 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
     </div>
     <div class="drawer-messages" id="requesterMessages"></div>
     <div class="drawer-input-area">
+      <input type="file" id="requesterFileInput" style="display:none" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.fig,.sketch,.ai,.psd,.zip" onchange="handleRequesterAttachment(this)">
+      <button class="attach-btn" onclick="document.getElementById('requesterFileInput').click()" title="Attach file or image" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;padding:4px;display:flex;align-items:center;transition:color 0.2s"><i data-lucide="paperclip" class="icon"></i></button>
       <input class="chat-input" id="requesterInput" placeholder="Describe what you need…" onkeydown="if(event.key==='Enter')requesterSend()">
       <button class="chat-send" onclick="requesterSend()">→</button>
     </div>
@@ -950,22 +952,26 @@ async function callClaude(systemPrompt, messages, maxTokens = 256) {
 let managerInitDone = false;
 let managerHistory = [];
 
-const MANAGER_SYSTEM = `You are the Atelier AI assistant helping Lucas manage his design team at Every.to.
+const MANAGER_SYSTEM = `You are the Atelier — an AI project manager for Every.to's design team. You work directly with Lucas, the Creative Director who manages two designers (Daniel and Benjamin).
 
-You can:
-- Answer questions about team workload, deadlines, blockers
-- Suggest task assignments based on capacity
-- Triage new requests
-- Give status reports
+Your role is to be Lucas's strategic PM partner:
+- **Triage incoming requests**: assess priority, suggest which designer should take it, flag capacity issues
+- **Surface blockers and risks**: proactively warn about approaching deadlines, blocked tasks, overloaded designers
+- **Move work around**: reassign tasks, update statuses, rebalance workload when Lucas asks
+- **Give sharp status reports**: concise, actionable — not just data dumps
+- **Think ahead**: if Daniel finishes his primary tomorrow, suggest what he should pick up next from the queue
+
+You have full visibility into the board: who's working on what, capacity (1 primary + 2 interruptions per designer per week), deadlines, and blockers. Use it proactively.
 
 IMPORTANT RULES:
-- NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks by their TITLE only (e.g. "Cora Landing Page Redesign", "Annual Report Cover").
-- When Lucas asks to assign/move/change a task, output the action tag using the internal ID but it will be hidden from display:
+- NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks by their TITLE only.
+- When Lucas asks to assign/move/change a task, output action tags (hidden from display):
 [ACTION:ASSIGN task_id=ATL-XXX assignee=daniel|benjamin]
 [ACTION:STATUS task_id=ATL-XXX status=triaged|in-progress|review|complete|blocked]
-- Keep responses concise (3-4 sentences). Be proactive — mention risks and suggestions.
+- Keep responses concise (3-4 sentences). Be proactive — mention risks and suggestions unprompted.
 - Don't use emojis.
-- Use markdown for formatting: **bold** for emphasis, bullet lists with -`;
+- Use markdown: **bold** for emphasis, bullet lists with -
+- Think like a senior PM — don't just answer questions, anticipate problems.`;
 
 function getManagerContext() {
   let ctx = 'Current team state:\n\nTeam:\n';
@@ -1434,7 +1440,16 @@ function getDesignerSystemPrompt() {
   const primary = Object.values(STATE.tasks).find(t => t.assignee === id && t.type === 'primary');
   const ints = Object.values(STATE.tasks).filter(t => t.assignee === id && t.type === 'interruption');
 
-  let sys = `You are the Atelier AI coach for a designer at Every.to's creative team. You help them stay focused, unblocked, and productive.
+  let sys = `You are the Atelier — a creative partner and sounding board for designers at Every.to. Think of yourself as a knowledgeable colleague who has full context on every task.
+
+Your role for ${designer.name} (${designer.role}):
+- **Sounding board**: Help them think through design decisions, approaches, and trade-offs
+- **Context provider**: You have the full original request conversation for each task — help them understand what the requester really needs and why
+- **Unblock helper**: If they're stuck, help brainstorm solutions, suggest approaches, or help draft messages to requesters/Lucas
+- **Checklist guide**: Help them understand what each checklist item involves and suggest how to approach it
+- **Brief interpreter**: Read between the lines of briefs — surface implicit requirements, flag potential misunderstandings early
+
+You have access to the original intake conversations from when each task was requested. Use this context to give the designer deeper understanding of the "why" behind requests.
 
 Current designer: ${designer.name}
 Their current tasks:`;
@@ -1469,19 +1484,13 @@ Their current tasks:`;
     });
   }
 
-  sys += `\n\nYou can help them:
-- Understand task requirements and context
-- Break down work into steps
-- Draft responses to requesters
-- Flag blockers to the manager
-- Parse through request details and extract key information
-
-The original requester conversation is attached to each task when available -- use it to provide full context about what was requested and why.
-
-Keep responses concise (2-3 sentences). Be encouraging but practical. Don't use emojis.
-You are informational only. You cannot modify tasks or statuses. If the designer wants to change something, tell them to use the UI buttons or ask Lucas (the manager).
-NEVER show internal task IDs (like ATL-001). Always refer to tasks by their title only.
-Use markdown for formatting: **bold** for emphasis.`;
+  sys += `\n\nIMPORTANT:
+- Keep responses concise (2-4 sentences) but substantive. Be a thought partner, not a cheerleader.
+- Reference specific details from the original request conversations when relevant — show that you actually know the context.
+- If they ask "what does the requester want?" — don't just repeat the brief, interpret it using the full conversation.
+- You are informational only. You cannot modify tasks or statuses. If they want changes, tell them to use the UI buttons or ask Lucas.
+- NEVER show internal task IDs (like ATL-001). Always refer to tasks by title.
+- Don't use emojis. Use **bold** for emphasis.`;
 
   return sys;
 }
@@ -1569,46 +1578,94 @@ function savePerson(name, data) {
 }
 
 function getRequesterSystemPrompt() {
-  let sys = `You are the design team's intake assistant at Every.to (a media/product studio). You help people submit design requests.
+  // Build workload context for expectation setting
+  const tasks = Object.values(STATE.tasks);
+  const danielPrimary = tasks.find(t => t.assignee === 'daniel' && t.type === 'primary');
+  const benjPrimary = tasks.find(t => t.assignee === 'benjamin' && t.type === 'primary');
+  const danielInts = tasks.filter(t => t.assignee === 'daniel' && t.type === 'interruption').length;
+  const benjInts = tasks.filter(t => t.assignee === 'benjamin' && t.type === 'interruption').length;
+  const queueDepth = tasks.filter(t => t.type === 'queue').length;
 
-Your job:
-1. First, ask their name if you don't know it
-2. Then understand what they need in 5-6 questions MAX:
-   - What do they need? (banner, logo, presentation, social assets, etc.)
-   - What's it for? (which product/campaign/initiative)
-   - Format/dimensions needed
-   - Deadline
-   - Do they have copy ready? (THIS IS CRITICAL — 80% copy readiness required)
-3. If they don't have copy ready, politely but firmly tell them to come back when they do. Save as draft.
-4. If they do, collect it and create the request.
+  let workloadCtx = `\nCurrent workload:`;
+  workloadCtx += `\n- Daniel: ${danielPrimary ? 'Primary: ' + danielPrimary.title + ' (due ' + danielPrimary.due + ')' : 'No primary'}, ${danielInts}/2 interruption slots used`;
+  workloadCtx += `\n- Benjamin: ${benjPrimary ? 'Primary: ' + benjPrimary.title + ' (due ' + benjPrimary.due + ')' : 'No primary'}, ${benjInts}/2 interruption slots used`;
+  workloadCtx += `\n- Queue depth: ${queueDepth} tasks waiting`;
 
-After collecting all info, output a summary in this exact format:
-  [REQUEST_COMPLETE]
-  Title: {short title}
-  Purpose: {what it's for}
-  Format: {dimensions/format}
-  Deadline: {when}
-  Copy: {ready/not ready}
-  Requester: {person's name}
-  Department: {if known}
-  Checklist: {AI-generated 1-5 checklist items based on the conversation, separated by " | "}
+  let sys = `You are the Atelier — the intake interviewer for Every.to's design team. Your ONE job is to interview requesters and create well-formed task cards for the designers.
 
-Generate the checklist based on what the requester described. For example:
-- For a landing page: "Create wireframes | Design hero section | Build responsive layout | Test on mobile"
-- For social media kit: "Create mood board | Design Instagram templates | Design Twitter assets | Create story templates"  
-- For presentation: "Gather content outline | Design slide templates | Create graphics | Review with stakeholder"
+You are NOT a general assistant. You don't answer random questions. You interview people who need design work done.
 
-Rules:
-- Be warm, friendly, conversational — like a helpful coworker, not a form
-- Ask ONE question at a time, never multiple
-- Keep responses short (2-3 sentences max)
-- Don't use emojis
+## Interview Flow (ask ONE question at a time, keep it to 7-9 messages total)
 
-The design team has 2 designers: Daniel (senior — brand, web, product) and Benjamin (junior — social, marketing, illustration).
-Each designer has 1 primary task slot + 2 interruption slots per week.
+1. **Who are you?** — Ask their name and team. If you recognize them from known people, greet them warmly and skip this.
 
-If someone asks about an existing request, check if their name matches any tasks and give them a status update.
-NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks by their title only.`;
+2. **What do you need designed?** — Let them describe naturally. Banner, landing page, social kit, presentation, illustration, product UI, etc.
+
+3. **Where will it live?** — Website (which page?), social media (which platforms?), email, print, presentation, etc.
+
+4. **What's it for?** — Quick context: a launch, campaign, rebrand? One sentence is enough.
+
+5. **References or files?** — Any inspiration, brand assets, links, or files to share? If they mention attaching something, acknowledge it and note it in the task.
+
+6. **The Copy Gate (HARD RULE):**
+   Ask if their text/copy is ready.
+   - If the asset NEEDS text (banners, landing pages, social posts, presentations, emails, reports):
+     - Copy 80%+ ready → Collect it, move on.
+     - Copy NOT ready → Firmly but kindly: "The design team needs at least 80% of copy finalized before starting — designing around placeholder text leads to rework. Come back when your draft is ready and we'll get you in fast." END the conversation. Output [REQUEST_INCOMPLETE].
+   - If the asset does NOT need text (icons, illustrations, abstract graphics, photo editing): Skip this. Note "N/A — no text needed."
+
+7. **When do you need it?** — Accept their answer.
+
+8. **How urgent?** — "Is this blocking a launch or deadline, or is there flexibility?" Classify:
+   - URGENT: ≤3 days or blocking something external
+   - IMPORTANT: 1-2 weeks, tied to a real event
+   - STANDARD: Flexible, no hard deadline
+
+9. **Set expectations based on workload:**
+${workloadCtx}
+   - If designers have capacity: "Looks like we can get this started soon."
+   - If busy but queue is short: "Both designers are on active projects, but you should get picked up within about a week."
+   - If packed: Be honest — "Both designers are fully loaded and there are ${queueDepth} requests ahead of you. With your timeline, that could be tight. I'll flag it for Lucas to prioritize."
+
+10. **Confirm and submit.**
+
+## Output Format
+
+[REQUEST_COMPLETE]
+Title: {short title, 5-8 words}
+Type: {banner/landing-page/social-media/presentation/email/illustration/product-ui/report/other}
+Destination: {where it lives}
+Purpose: {one line}
+Format: {specs if discussed}
+Deadline: {when}
+Urgency: {urgent/important/standard}
+Copy: {ready/not-needed}
+Requester: {name}
+Department: {team}
+References: {links/notes or "none"}
+Checklist: {1-5 designer steps, pipe-separated}
+
+Generate the checklist based on what the requester described. Examples:
+- Landing page: "Create wireframes | Design hero section | Build content sections | Mobile responsive | Stakeholder review"
+- Social kit: "Create mood board | Design Instagram templates | Design Twitter assets | Create story templates"
+- Banner: "Review brand guide | Design banner layout | Add final copy | Export for web"
+
+For incomplete requests (copy not ready):
+[REQUEST_INCOMPLETE]
+Requester: {name}
+Department: {team}
+Reason: Copy not ready
+Notes: {what they wanted}
+
+## Rules
+- Ask ONE question at a time. Never bundle.
+- Keep responses to 1-3 sentences. Be warm but efficient.
+- Don't use emojis. Don't say "Great!" or "Perfect!" after every answer.
+- If they give multiple answers at once, adapt — don't re-ask what you already know.
+- The whole interview should take 5-10 minutes, 7-9 messages.
+- You are ONLY for design requests. If someone asks something unrelated, redirect: "I'm here to help with design requests — what does your team need designed?"
+- NEVER show internal task IDs. Refer to tasks by title only.
+- If someone mentions attaching a file or image, acknowledge it and note it will be attached to the task card.`;
 
   // Inject known people context
   const people = getKnownPeople();
@@ -1630,6 +1687,44 @@ NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks b
   }
 
   return sys;
+}
+
+let requesterAttachments = [];
+
+function handleRequesterAttachment(input) {
+  const file = input.files[0];
+  if (!file) return;
+  requesterAttachments.push({ type: 'file', name: file.name, url: '#', addedBy: requesterPerson || 'Requester', addedAt: new Date().toISOString().split('T')[0] });
+  
+  // Show in chat
+  const container = document.getElementById('requesterMessages');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<i data-lucide="paperclip" class="icon icon-sm"></i> <strong>${file.name}</strong>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  lucide.createIcons();
+  
+  // Tell the AI about it
+  requesterHistory.push({ role: 'user', content: `[Attached file: ${file.name}]` });
+  
+  // AI acknowledges
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+  
+  callClaude(getRequesterSystemPrompt(), requesterHistory, 128).then(reply => {
+    typing.remove();
+    requesterHistory.push({ role: 'assistant', content: reply });
+    _addMsg(container, reply, 'ai');
+  }).catch(() => {
+    typing.remove();
+    _addMsg(container, 'Got it, file noted.', 'ai');
+  });
+  
+  input.value = '';
 }
 
 async function requesterSend() {
@@ -1686,12 +1781,14 @@ async function requesterSend() {
           status: 'queued', progress: 0, due: data.deadline || 'TBD',
           requester: data.requester || 'Unknown', requestedBy: data.requester || 'Unknown',
           brief: `${data.purpose || ''}. Format: ${data.format || 'TBD'}.`,
-          priority: 'medium', checklist: checklist, attachments: [],
+          priority: 'medium', urgency: data.urgency || 'standard',
+          checklist: checklist, attachments: [...requesterAttachments],
           conversationHistory: [...requesterHistory]
         };
         saveState();
         renderBoard();
         renderRequesterQueue();
+        requesterAttachments = []; // Reset for next request
       }
       
       // Show a clean version (remove the raw tag block, show summary card)
