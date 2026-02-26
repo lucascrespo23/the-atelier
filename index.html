@@ -705,6 +705,8 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 }
 .add-link-form button:hover { opacity: 0.85; }
 
+.hidden { display: none !important; }
+
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
   .chat-panel { width: 100%; min-width: 0; }
@@ -1915,6 +1917,20 @@ function openTaskModalInternal(taskId, readOnly) {
         </div>
       `}
     </div>
+    ${task.conversationHistory && task.conversationHistory.length ? `
+      <div class="modal-section-label" style="cursor:pointer;display:flex;align-items:center;gap:6px" onclick="document.getElementById('modalConvo-${taskId}').classList.toggle('hidden')">
+        <span>Request Conversation</span>
+        <span style="font-size:10px;color:var(--text-tertiary)">▼</span>
+      </div>
+      <div id="modalConvo-${taskId}" class="hidden" style="margin-bottom:24px;background:var(--bg-warm);border-radius:12px;padding:16px;max-height:300px;overflow-y:auto">
+        ${task.conversationHistory.map(msg => `
+          <div style="margin-bottom:12px;font-size:13px;line-height:1.6">
+            <span style="font-weight:600;color:${msg.role === 'user' ? 'var(--accent)' : 'var(--text-secondary)'};font-size:11px;text-transform:uppercase;letter-spacing:0.5px">${msg.role === 'user' ? task.requester || 'Requester' : 'Atelier'}</span>
+            <div style="color:var(--text);margin-top:2px">${msg.content}</div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
     <div class="modal-section-label">Activity</div>
     <div class="modal-activity">
       ${activities.map(a => `<div class="act-item"><span class="act-time">${a.time}</span><span>${a.text}</span></div>`).join('')}
