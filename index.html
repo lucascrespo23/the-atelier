@@ -661,6 +661,17 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 .modal-actions .status-btn:hover { background: var(--bg-warm); }
 .modal-actions .status-btn.active-status { background: var(--text); color: #fff; border-color: var(--text); }
 
+/* Role toggle (Primary/Secondary) */
+.role-toggle { display: inline-flex; border: 1px solid var(--border-input); border-radius: 8px; overflow: hidden; }
+.role-toggle button {
+  padding: 6px 14px; border: none; background: var(--bg-card); color: var(--text-secondary);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s ease;
+  font-family: 'Inter', sans-serif;
+}
+.role-toggle button:first-child { border-right: 1px solid var(--border-input); }
+.role-toggle button:hover { background: var(--bg-warm); }
+.role-toggle button.active-role { background: var(--text); color: #fff; }
+
 /* ===== ATTACHMENTS ===== */
 .attachments-section { margin-bottom: 24px; }
 .attachment-row {
@@ -1328,7 +1339,7 @@ You have full visibility into the board: who's working on what, capacity (1 prim
 IMPORTANT RULES:
 - NEVER show internal task IDs (like ATL-001) to the user. Always refer to tasks by their TITLE only.
 - When Lucas asks to assign/move/change a task, output action tags (hidden from display):
-[ACTION:ASSIGN task_id=ATL-XXX assignee=daniel|benjamin]
+[ACTION:ASSIGN task_id=ATL-XXX assignee=daniel|benjamin role=primary|secondary]
 [ACTION:STATUS task_id=ATL-XXX status=triaged|in-progress|review|complete|blocked]
 - Keep responses concise (3-4 sentences). Be proactive — mention risks and suggestions unprompted.
 - Don't use emojis.
@@ -1459,11 +1470,21 @@ async function managerSend(text) {
       if (actionType === 'ASSIGN') {
         const tidMatch = params.match(/task_id=(ATL-\d+)/);
         const assMatch = params.match(/assignee=(\w+)/);
+        const roleMatch = params.match(/role=(primary|secondary)/);
         if (tidMatch && assMatch && STATE.tasks[tidMatch[1]]) {
           const task = STATE.tasks[tidMatch[1]];
           task.assignee = assMatch[1];
-          if (task.type === 'queue') { task.type = 'interruption'; task.slot = 1; }
-          if (task.status === 'queued') task.status = 'triaged';
+          const role = roleMatch ? roleMatch[1] : 'secondary';
+          if (role === 'primary') {
+            // Bump existing primary
+            const existing = Object.values(STATE.tasks).find(t => t.id !== task.id && t.assignee === assMatch[1] && t.type === 'primary' && t.status !== 'complete');
+            if (existing) { existing.type = 'interruption'; existing.slot = 1; }
+            task.type = 'primary'; delete task.slot;
+            if (task.status === 'queued' || task.status === 'triaged') task.status = 'in-progress';
+          } else {
+            if (task.type === 'queue') { task.type = 'interruption'; task.slot = 1; }
+            if (task.status === 'queued') task.status = 'triaged';
+          }
           saveState(); renderBoard();
           setTimeout(() => highlightCard(tidMatch[1]), 300);
         }
@@ -2632,6 +2653,10 @@ function openTaskModalInternal(taskId, readOnly) {
           <option value="daniel" ${task.assignee === 'daniel' ? 'selected' : ''}>Daniel</option>
           <option value="benjamin" ${task.assignee === 'benjamin' ? 'selected' : ''}>Benjamin</option>
         </select>
+        ${task.assignee ? `<div class="role-toggle">
+          <button class="${task.type === 'primary' ? 'active-role' : ''}" onclick="modalSetRole('${taskId}','primary')">Primary</button>
+          <button class="${task.type === 'interruption' ? 'active-role' : ''}" onclick="modalSetRole('${taskId}','secondary')">Secondary</button>
+        </div>` : ''}
         ${allStatuses.map(s => {
           const label = s === 'in-progress' ? 'In Progress' : s === 'review' ? 'Review' : s === 'triaged' ? 'Triage' : 'Complete';
           const isActive = task.status === s;
@@ -2704,6 +2729,53 @@ function modalAssign(taskId, value) {
   if (value) {
     const name = STATE.team[value]?.name || value;
     showToast(name + ' assigned to ' + task.title);
+  }
+  
+  saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
+}
+
+function modalSetRole(taskId, role) {
+  const task = STATE.tasks[taskId];
+  if (!task.assignee) return;
+  
+  if (role === 'primary') {
+    // Check if this designer already has a primary
+    const existingPrimary = Object.values(STATE.tasks).find(
+      t => t.id !== taskId && t.assignee === task.assignee && t.type === 'primary' && t.status !== 'complete'
+    );
+    if (existingPrimary) {
+      // Bump existing primary to secondary
+      const ints = Object.values(STATE.tasks).filter(
+        t => t.assignee === task.assignee && t.type === 'interruption' && t.status !== 'complete'
+      );
+      if (ints.length >= 2) {
+        // Secondary slots full — bump to queue
+        existingPrimary.type = 'queue';
+        existingPrimary.assignee = null;
+        existingPrimary.status = 'queued';
+        showToast(existingPrimary.title + ' moved back to queue (slots full)', 'var(--gold)');
+      } else {
+        existingPrimary.type = 'interruption';
+        existingPrimary.slot = ints.length + 1;
+        showToast(existingPrimary.title + ' moved to secondary', 'var(--gold)');
+      }
+    }
+    task.type = 'primary';
+    delete task.slot;
+    if (task.status === 'queued' || task.status === 'triaged') task.status = 'in-progress';
+    showToast(task.title + ' is now primary for ' + (STATE.team[task.assignee]?.name || task.assignee));
+  } else {
+    // Setting to secondary
+    const ints = Object.values(STATE.tasks).filter(
+      t => t.id !== taskId && t.assignee === task.assignee && t.type === 'interruption' && t.status !== 'complete'
+    );
+    if (ints.length >= 2) {
+      showToast('Secondary slots are full for ' + (STATE.team[task.assignee]?.name || task.assignee), 'var(--red)');
+      return;
+    }
+    task.type = 'interruption';
+    task.slot = ints.length + 1;
+    showToast(task.title + ' moved to secondary');
   }
   
   saveState(); renderBoard(); renderDesigner(); renderRequesterQueue(); openTaskModal(taskId);
