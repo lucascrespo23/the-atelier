@@ -954,9 +954,11 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
 /* ===== PROFILE SELECTION ===== */
 .profile-selection {
   position: fixed; inset: 0; z-index: 1001;
-  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  background: var(--bg); display: flex; align-items: flex-start; justify-content: center;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
   animation: fadeIn 0.4s ease-out;
 }
+.profile-selection-content { padding: 60px 20px 80px; }
 .profile-selection-content {
   text-align: center; max-width: 800px; width: 90vw; padding: 40px 20px;
 }
@@ -984,6 +986,10 @@ h1, h2, h3, .heading { font-family: 'Playfair Display', serif; font-weight: 500;
   display: flex; align-items: center; justify-content: center;
   color: white; font-weight: 700; font-size: 24px; letter-spacing: -0.5px;
   transition: transform 0.2s ease; flex-shrink: 0;
+  overflow: hidden; background-size: cover; background-position: center;
+}
+.profile-avatar img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
 }
 .profile-card:hover .profile-avatar { transform: scale(1.08); }
 .profile-info { text-align: center; }
@@ -1220,35 +1226,35 @@ const STATE = loadState() || getDefaultState();
 // Team members with role-based routing
 const TEAM_MEMBERS = {
   // Manager
-  'lucas-crespo': { name: 'Lucas Crespo', role: 'manager', title: 'Creative Director', color: '#c4704b' },
+  'lucas-crespo': { name: 'Lucas Crespo', role: 'manager', title: 'Creative Director', color: '#c4704b', photo: 'https://every.to/assets/team/lucas-44254185f8e9c2462265c3be4292c5dd9703ecc834688caff03cca743399b9db.png' },
   
   // Designers
-  'daniel-rodrigues': { name: 'Daniel Rodrigues', role: 'designer', title: 'Senior Designer', color: '#6b8f71' },
-  'benjamin-ose': { name: 'Benjamin Ose', role: 'designer', title: 'Creative Designer', color: '#8b7aab' },
+  'daniel-rodrigues': { name: 'Daniel Rodrigues', role: 'designer', title: 'Senior Designer', color: '#6b8f71', photo: 'https://every.to/assets/team/daniel-86fe2cfcbae3046f0081c3f00974059a08fa13e90d536031dc44a0070aabac16.png' },
+  'benjamin-ose': { name: 'Benjamin Ose', role: 'designer', title: 'Creative Designer', color: '#8b7aab', photo: 'https://every.to/assets/team/benjamin-2163798905689020d1d6099d46b5f3758ee5b4fb6b8f14e6bf24f4de516cbd97.png' },
   
   // Requesters
-  'dan-shipper': { name: 'Dan Shipper', role: 'requester', title: 'CEO', color: '#b89650' },
-  'brandon-gell': { name: 'Brandon Gell', role: 'requester', title: 'COO', color: '#c46b5e' },
-  'kate-lee': { name: 'Kate Lee', role: 'requester', title: 'Editor in Chief', color: '#8b7aab' },
-  'natalia-quintero': { name: 'Natalia Quintero', role: 'requester', title: 'Head of Consulting', color: '#6b8f71' },
-  'austin-tedesco': { name: 'Austin Tedesco', role: 'requester', title: 'Head of Growth', color: '#b89650' },
-  'willie-williams': { name: 'Willie Williams', role: 'requester', title: 'Head of Platform', color: '#c4704b' },
-  'andrey-galko': { name: 'Andrey Galko', role: 'requester', title: 'Engineering Lead', color: '#c46b5e' },
-  'eleanor-warnock': { name: 'Eleanor Warnock', role: 'requester', title: 'Managing Editor', color: '#8b7aab' },
-  'katie-parrott': { name: 'Katie Parrott', role: 'requester', title: 'Staff Writer & AI Editorial Lead', color: '#6b8f71' },
-  'victor-stepanov': { name: 'Victor Stepanov', role: 'requester', title: 'Growth Marketing', color: '#b89650' },
-  'brooker-belcourt': { name: 'Brooker Belcourt', role: 'requester', title: 'Head of Financial Services Consulting', color: '#c4704b' },
-  'kieran-klaassen': { name: 'Kieran Klaassen', role: 'requester', title: 'GM of Cora', color: '#c46b5e' },
-  'nityesh-agarwal': { name: 'Nityesh Agarwal', role: 'requester', title: 'Engineer', color: '#8b7aab' },
-  'yash-poojary': { name: 'Yash Poojary', role: 'requester', title: 'GM of Sparkle', color: '#6b8f71' },
-  'naveen-naidu': { name: 'Naveen Naidu', role: 'requester', title: 'GM of Monologue', color: '#b89650' },
-  'alex-duffy': { name: 'Alex Duffy', role: 'requester', title: 'CEO of Good Start Labs', color: '#c4704b' },
-  'meghna-rao': { name: 'Meghna Rao', role: 'requester', title: 'Contributing Editor', color: '#c46b5e' },
-  'jack-cheng': { name: 'Jack Cheng', role: 'requester', title: 'Contributing Editor', color: '#8b7aab' },
-  'matt-piper': { name: 'Matt Piper', role: 'requester', title: 'Contributing Editor', color: '#6b8f71' },
-  'rachel-braun': { name: 'Rachel Braun', role: 'requester', title: 'Podcast Producer', color: '#b89650' },
-  'hrithik-sanil': { name: 'Hrithik Sanil', role: 'requester', title: 'Video Editor', color: '#c4704b' },
-  'jalaiyah-bolden': { name: 'Jalaiyah Bolden', role: 'requester', title: 'Executive Operations Manager', color: '#c46b5e' }
+  'dan-shipper': { name: 'Dan Shipper', role: 'requester', title: 'CEO', color: '#b89650', photo: 'https://every.to/assets/team/dan-0ff7cf951d07fc086d603ec0b20714678b5c542ef0617518fcb5b6f78af33e0c.png' },
+  'brandon-gell': { name: 'Brandon Gell', role: 'requester', title: 'COO', color: '#c46b5e', photo: 'https://every.to/assets/team/brandon-b8d1dad74f28793b1338e8c797eb6c4d735b1898705d94191ec9eff34534ad9a.png' },
+  'kate-lee': { name: 'Kate Lee', role: 'requester', title: 'Editor in Chief', color: '#8b7aab', photo: 'https://every.to/assets/team/kate-abc03cf4765a3495782450495ed2c2ae256d4275868771aba07b7d089826010a.png' },
+  'natalia-quintero': { name: 'Natalia Quintero', role: 'requester', title: 'Head of Consulting', color: '#6b8f71', photo: 'https://every.to/assets/team/natalia-0bcee2a2bc3744fd51617092856e6a9c19a9abe19ff346768777a8c29c901bf0.png' },
+  'austin-tedesco': { name: 'Austin Tedesco', role: 'requester', title: 'Head of Growth', color: '#b89650', photo: 'https://every.to/assets/team/austin-47d0450ffe774322dc3a448f7deccf633c02096f83b1f564b17c8f81155f5315.png' },
+  'willie-williams': { name: 'Willie Williams', role: 'requester', title: 'Head of Platform', color: '#c4704b', photo: 'https://every.to/assets/team/willie-6d8c052a74f604044b5eced29da062975e0acb7fc51f1810e28d43eadbd06134.png' },
+  'andrey-galko': { name: 'Andrey Galko', role: 'requester', title: 'Engineering Lead', color: '#c46b5e', photo: 'https://every.to/assets/team/andrey-47bf6a5f150bbd6387bcd19fb0d186b4835b58df0592fe597e3a8a0816fb828b.png' },
+  'eleanor-warnock': { name: 'Eleanor Warnock', role: 'requester', title: 'Managing Editor', color: '#8b7aab', photo: 'https://every.to/assets/team/eleanor-9726e9fdd16386181b102c5926f5d182657429fa9547fe555a9a35f5142e1f89.png' },
+  'katie-parrott': { name: 'Katie Parrott', role: 'requester', title: 'Staff Writer & AI Editorial Lead', color: '#6b8f71', photo: 'https://every.to/assets/team/katie-b19b8e89bbbb4e73ced8b4eece0c5ccfd4b68d13550e1bf92d8f9589b15cd194.png' },
+  'victor-stepanov': { name: 'Victor Stepanov', role: 'requester', title: 'Growth Marketing', color: '#b89650', photo: 'https://every.to/assets/team/victor-f2df2ff677613635c79a271e0fe2f109f5c1f20f391ad820bfbdbafc2bbcd015.png' },
+  'brooker-belcourt': { name: 'Brooker Belcourt', role: 'requester', title: 'Head of Financial Services Consulting', color: '#c4704b', photo: 'https://every.to/assets/team/brooker-13dc565e88fbae7d145f31bae77aa75459eb38c07f349a6252e015bf397ab767.png' },
+  'kieran-klaassen': { name: 'Kieran Klaassen', role: 'requester', title: 'GM of Cora', color: '#c46b5e', photo: 'https://every.to/assets/team/kieran-bb3200155bbd5b326676eb4cc57fd55d69172efcca3d92ee214796ef7be77a6e.png' },
+  'nityesh-agarwal': { name: 'Nityesh Agarwal', role: 'requester', title: 'Engineer', color: '#8b7aab', photo: 'https://every.to/assets/team/nityesh-f57f4a0972a2eff7f46c9a10861a21a5c52fc8629a915a4a6f123978aa44bdfc.png' },
+  'yash-poojary': { name: 'Yash Poojary', role: 'requester', title: 'GM of Sparkle', color: '#6b8f71', photo: 'https://every.to/assets/team/yash-1d65e91637499325ff23236af6831c62ce081300a16347c4830fcbb882c11f04.png' },
+  'naveen-naidu': { name: 'Naveen Naidu', role: 'requester', title: 'GM of Monologue', color: '#b89650', photo: 'https://every.to/assets/team/naveen-f2b1cc71079ea28cbf69258a1dec652eceba248c38dd78d7538d533a34c675a0.png' },
+  'alex-duffy': { name: 'Alex Duffy', role: 'requester', title: 'CEO of Good Start Labs', color: '#c4704b', photo: 'https://every.to/assets/team/alex-6407fd14eee40c1950c70827473ec3064a4c80458d0d3deb12cf5064cebebfd0.png' },
+  'meghna-rao': { name: 'Meghna Rao', role: 'requester', title: 'Contributing Editor', color: '#c46b5e', photo: 'https://every.to/assets/team/meghna-352a3246db4f79453124ae67beb1fa0c6e07d7ae2bcf1a86f5513bc077008e55.png' },
+  'jack-cheng': { name: 'Jack Cheng', role: 'requester', title: 'Contributing Editor', color: '#8b7aab', photo: 'https://every.to/assets/team/jack-fc7cc17e7dc133300de86ec5c29c6d48692b060ecf3a9e95268da48386f184ac.png' },
+  'matt-piper': { name: 'Matt Piper', role: 'requester', title: 'Contributing Editor', color: '#6b8f71', photo: 'https://every.to/assets/team/matt-9a5a73da72a580c22aa4e5a392b24e2a9a242380e3ec7d6a2f3eae302743b482.png' },
+  'rachel-braun': { name: 'Rachel Braun', role: 'requester', title: 'Podcast Producer', color: '#b89650', photo: 'https://every.to/assets/team/rachel-31285493b29dc04aa70c8e003f2bd1a747af05854131618e61afec0f02f9aeb0.png' },
+  'hrithik-sanil': { name: 'Hrithik Sanil', role: 'requester', title: 'Video Editor', color: '#c4704b', photo: 'https://every.to/assets/team/hrithik-8b7c09539c08a2d208ad538758227a9fd933b9b845f8fb739dbaea88289168a7.png' },
+  'jalaiyah-bolden': { name: 'Jalaiyah Bolden', role: 'requester', title: 'Executive Operations Manager', color: '#c46b5e', photo: 'https://every.to/assets/team/jalaiyah-ece282089bec631557f8071bcd3d48dbf7d93bc5b0b3c4252c90009c0afcce5f.png' }
 };
 
 function getDefaultState() {
@@ -1465,11 +1471,10 @@ function renderProfileGrid() {
   grid.innerHTML = sortedMembers.map(([id, member], index) => `
     <div class="profile-card" onclick="selectProfile('${id}')" style="position: relative;">
       <div class="profile-avatar" style="background: ${member.color};">
-        ${getInitials(member.name)}
+        ${member.photo ? `<img src="${member.photo}" alt="${member.name}" onerror="this.style.display='none';this.parentNode.textContent='${getInitials(member.name)}'">` : getInitials(member.name)}
       </div>
       <div class="profile-info">
         <div class="profile-name">${member.name}</div>
-        <div class="profile-title">${member.title}</div>
       </div>
     </div>
   `).join('');
@@ -1507,8 +1512,15 @@ function updateProfileIndicator() {
   const name = document.getElementById('profileName');
   
   if (initials) {
-    initials.textContent = getInitials(STATE.currentUser.name);
-    initials.style.background = STATE.currentUser.color;
+    const member = TEAM_MEMBERS[STATE.currentUser.id] || TEAM_MEMBERS[Object.keys(TEAM_MEMBERS).find(k => TEAM_MEMBERS[k].name === STATE.currentUser.name)];
+    if (member && member.photo) {
+      initials.innerHTML = `<img src="${member.photo}" alt="${STATE.currentUser.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      initials.style.background = 'transparent';
+      initials.style.overflow = 'hidden';
+    } else {
+      initials.textContent = getInitials(STATE.currentUser.name);
+      initials.style.background = STATE.currentUser.color;
+    }
   }
   
   if (name) {
