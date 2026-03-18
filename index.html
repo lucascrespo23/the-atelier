@@ -1484,6 +1484,15 @@ function selectProfile(profileId) {
   const member = TEAM_MEMBERS[profileId];
   if (!member) return;
   
+  // Password protect Lucas's account
+  if (profileId === 'lucas-crespo') {
+    const pw = prompt('Enter password:');
+    if (pw !== 'edison23') {
+      alert('Incorrect password.');
+      return;
+    }
+  }
+  
   STATE.currentUser = {
     id: profileId,
     name: member.name,
